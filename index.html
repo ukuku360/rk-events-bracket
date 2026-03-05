@@ -652,6 +652,98 @@
         }
       }
 
+      @keyframes pulseHeart {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(222, 31, 74, 0.4); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 4px rgba(222, 31, 74, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(222, 31, 74, 0); }
+      }
+
+      .alert-banner-panel {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border-bottom: 2px solid var(--brand);
+        box-shadow: 0 4px 16px rgba(222, 31, 74, 0.15);
+        padding: 12px 20px;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+
+      .alert-banner-panel.hidden {
+        display: none !important;
+      }
+
+      .alert-banner-content {
+        max-width: 1320px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .now-playing-group, .up-next-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .banner-label {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+
+      .banner-label.highlight {
+        background: var(--brand);
+        color: #fff;
+        animation: pulseHeart 1.5s infinite;
+      }
+
+      .up-next-group .banner-label {
+        background: #f1c8d5;
+        color: #7a4f60;
+      }
+
+      .banner-text {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .banner-text.muted {
+        font-size: 14px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .siren-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9998;
+        background-color: rgba(222, 31, 74, 0);
+      }
+
+      .siren-overlay.active {
+        animation: sirenFlash 2.5s ease-in-out;
+      }
+
+      @keyframes sirenFlash {
+        0% { background-color: rgba(222, 31, 74, 0); }
+        15% { background-color: rgba(222, 31, 74, 0.35); }
+        30% { background-color: rgba(222, 31, 74, 0); }
+        45% { background-color: rgba(222, 31, 74, 0.35); }
+        60% { background-color: rgba(222, 31, 74, 0); }
+        75% { background-color: rgba(222, 31, 74, 0.35); }
+        100% { background-color: rgba(222, 31, 74, 0); }
+      }
+
       @media (max-width: 1080px) {
         .content {
           grid-template-columns: 1fr;
@@ -675,6 +767,16 @@
       }
 
       @media (max-width: 640px) {
+        .alert-banner-content {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .banner-text {
+          font-size: 14px;
+        }
+
         h1 {
           font-size: 26px;
         }
@@ -719,6 +821,19 @@
     </style>
   </head>
   <body>
+    <div id="alertBannerPanel" class="alert-banner-panel hidden">
+      <div class="alert-banner-content">
+        <div class="now-playing-group">
+          <span class="banner-label highlight">NOW PLAYING</span>
+          <span class="banner-text" id="nowPlayingText"></span>
+        </div>
+        <div class="up-next-group">
+          <span class="banner-label">UP NEXT</span>
+          <span class="banner-text muted" id="upNextText"></span>
+        </div>
+      </div>
+    </div>
+    <div id="sirenOverlay" class="siren-overlay hidden"></div>
     <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
     <div id="championOverlay" style="display:none;position:fixed;inset:0;z-index:10000;pointer-events:none;align-items:center;justify-content:center;flex-direction:column;">
       <div id="championBurst" style="font-size:clamp(2rem,8vw,5rem);font-weight:900;color:#fff;text-shadow:0 0 40px #f5a623,0 4px 24px rgba(0,0,0,0.5);letter-spacing:-0.02em;text-align:center;opacity:0;transform:scale(0.5);transition:none;"></div>
@@ -781,6 +896,7 @@
             <button type="button" id="adminLogoutButton" class="hidden">Log Out</button>
           </div>
           <div class="actions hidden" id="adminActionGroup">
+            <button type="button" id="callNextMatchButton" style="background: linear-gradient(140deg, #ff2f5d, #b41038); border-color: #9f1539;">Call Next Match</button>
             <button type="button" id="clearButton">Reset</button>
           </div>
           <p class="small" id="adminCountText">Entries: 0 / 16</p>
@@ -863,10 +979,15 @@
       const countText = document.getElementById('countText');
       const addButton = document.getElementById('addButton');
       const clearButton = document.getElementById('clearButton');
+      const callNextMatchButton = document.getElementById('callNextMatchButton');
       const focusToggle = document.getElementById('focusToggle');
       const drawRosterButton = document.getElementById('drawRosterButton');
       const shareButton = document.getElementById('shareButton');
       const shareStatus = document.getElementById('shareStatus');
+      const alertBannerPanel = document.getElementById('alertBannerPanel');
+      const nowPlayingText = document.getElementById('nowPlayingText');
+      const upNextText = document.getElementById('upNextText');
+      const sirenOverlay = document.getElementById('sirenOverlay');
       const bracketPanel = document.querySelector('.bracket-panel');
       const shuffleOverlay = document.getElementById('shuffleOverlay');
       const rosterStatus = document.getElementById('rosterStatus');
@@ -898,6 +1019,7 @@
       let currentView = 'user';
       let isSwitchingViews = false;
       let firebaseRetryCount = 0;
+      let lastAlertTimestamp = 0;
       const FIREBASE_MAX_RETRIES = 3;
       const FIREBASE_RETRY_BASE_DELAY_MS = 3000;
 
@@ -1300,6 +1422,10 @@
         const canControlRoster = canUseRosterControls();
         if (clearButton) {
           clearButton.disabled = !canControlRoster;
+        }
+
+        if (callNextMatchButton) {
+          callNextMatchButton.disabled = !canControlRoster || !isRosterFinalized || isShufflingRoster;
         }
 
         if (!canControlRoster) {
@@ -1787,6 +1913,7 @@
             rosterOrder: [],
             isRosterFinalized: false,
             matchWinners: {},
+            alertBanner: null,
             updatedAt: serverTimestamp(),
           });
           clearLocalEventState();
@@ -1821,9 +1948,104 @@
         await addParticipantToDatabase(player);
       }
 
+      function getPendingMatches() {
+        const pending = [];
+        const entrants = getBracketEntrants();
+        while (entrants.length < MAX_PLAYERS) entrants.push({ empty: true, name: 'Empty slot' });
+
+        const slots = { 0: {} };
+        for (let i = 0; i < 16; i++) {
+          slots[0][i] = entrants[i];
+        }
+
+        for (let l = 1; l <= 4; l++) {
+          slots[l] = {};
+          const count = 16 / Math.pow(2, l);
+          for (let m = 0; m < count; m++) {
+            const winnerIdx = matchWinners[`${l}-${m}`];
+            if (winnerIdx !== undefined) {
+              slots[l][m] = entrants[winnerIdx];
+            }
+          }
+        }
+
+        for (let l = 1; l <= 4; l++) {
+          const count = 16 / Math.pow(2, l);
+          for (let m = 0; m < count; m++) {
+            if (!slots[l][m]) {
+              const p1 = slots[l - 1][m * 2];
+              const p2 = slots[l - 1][m * 2 + 1];
+              if (p1 && p2) {
+                if (p1.empty && p2.empty) continue;
+                pending.push({ p1, p2, level: l, match: m });
+              }
+            }
+          }
+        }
+        return pending;
+      }
+
+      function triggerAlertBanner(payload) {
+        if (!payload || !payload.title) return;
+        
+        nowPlayingText.textContent = payload.title;
+        upNextText.textContent = payload.upNext || 'None';
+        alertBannerPanel.classList.remove('hidden');
+        
+        sirenOverlay.classList.remove('hidden');
+        sirenOverlay.classList.remove('active');
+        void sirenOverlay.offsetWidth; // Force reflow
+        sirenOverlay.classList.add('active');
+        
+        setTimeout(() => {
+          sirenOverlay.classList.remove('active');
+          sirenOverlay.classList.add('hidden');
+        }, 2500);
+      }
+
+      function handleCallNextMatch() {
+        if (!isRosterFinalized) {
+          alert("Please draw the roster first.");
+          return;
+        }
+
+        const pending = getPendingMatches();
+        if (pending.length === 0) {
+          alert("No pending matches found. The tournament might be over!");
+          return;
+        }
+
+        const next = pending[0];
+        const upNext = pending.length > 1 ? pending[1] : null;
+
+        const p1Name = next.p1.empty ? '(Bye)' : shortenPlayerName(next.p1.name, 12);
+        const p2Name = next.p2.empty ? '(Bye)' : shortenPlayerName(next.p2.name, 12);
+        const title = `[${p1Name}] vs [${p2Name}] - 경기장으로 나와주세요!`;
+
+        let upNextTextStr = 'None';
+        if (upNext) {
+          const u1Name = upNext.p1.empty ? '(Bye)' : shortenPlayerName(upNext.p1.name, 12);
+          const u2Name = upNext.p2.empty ? '(Bye)' : shortenPlayerName(upNext.p2.name, 12);
+          upNextTextStr = `${u1Name} vs ${u2Name}`;
+        }
+
+        const payload = {
+          title,
+          upNext: upNextTextStr,
+          timestamp: Date.now()
+        };
+
+        if (isFirebaseAvailable && eventRef) {
+          update(eventRef, { alertBanner: payload });
+        } else {
+          triggerAlertBanner(payload);
+        }
+      }
+
       function wireUiEventListeners() {
         form.addEventListener('submit', handleSubmit);
         clearButton.addEventListener('click', resetEventState);
+        callNextMatchButton.addEventListener('click', handleCallNextMatch);
         adminPlayerList.addEventListener('click', async (event) => {
           if (!canUseAdminControls()) {
             return;
@@ -1908,6 +2130,22 @@
               bracketPanel.classList.add('is-drawn');
             } else {
               bracketPanel.classList.remove('is-drawn');
+              alertBannerPanel.classList.add('hidden');
+            }
+
+            const alertBanner = data?.alertBanner;
+            if (alertBanner && alertBanner.timestamp) {
+              if (lastAlertTimestamp === 0) {
+                lastAlertTimestamp = alertBanner.timestamp;
+                nowPlayingText.textContent = alertBanner.title;
+                upNextText.textContent = alertBanner.upNext || 'None';
+                alertBannerPanel.classList.remove('hidden');
+              } else if (alertBanner.timestamp > lastAlertTimestamp) {
+                lastAlertTimestamp = alertBanner.timestamp;
+                triggerAlertBanner(alertBanner);
+              }
+            } else {
+              alertBannerPanel.classList.add('hidden');
             }
 
             renderPlayerList();

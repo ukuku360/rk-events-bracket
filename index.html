@@ -62,21 +62,6 @@
         transform: rotate(-3deg);
       }
 
-      .brand-mark {
-        width: 64px;
-        height: 64px;
-        display: grid;
-        place-items: center;
-        background: var(--brand-yellow);
-        color: var(--black);
-        font-family: 'Bricolage Grotesque', sans-serif;
-        font-size: 36px;
-        font-weight: 800;
-        border: var(--thick-border);
-        border-radius: 16px;
-        box-shadow: 4px 4px 0px var(--shadow-color);
-      }
-
       .brand-wordmark {
         display: inline-flex;
         align-items: center;
@@ -520,6 +505,11 @@
         text-anchor: middle;
       }
 
+      .node-text-compact {
+        font-size: 9px;
+        letter-spacing: -0.01em;
+      }
+
       .node-meta {
         fill: #444;
         font-size: 11px;
@@ -626,7 +616,6 @@
         h1 { font-size: 32px; text-shadow: 2px 2px 0px #fff, 4px 4px 0px #000; }
         .brand-row { transform: none; }
         .brand-wordmark { font-size: 28px; height: 52px; padding: 0 16px; border-radius: 12px; }
-        .brand-mark { width: 52px; height: 52px; font-size: 28px; border-radius: 12px; }
         .event-summary strong { font-size: 20px; }
         .panel h2 { font-size: 24px; }
       }
@@ -640,7 +629,6 @@
     <main class="page">
       <header class="hero">
         <div class="brand-row">
-          <div class="brand-mark" aria-hidden="true">R</div>
           <div class="brand-wordmark" aria-label="RoomingKos">RoomingKos</div>
         </div>
         <h1>Swanston Table Tennis Tournament</h1>
@@ -1342,7 +1330,8 @@
         const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         name.setAttribute('x', x);
         name.setAttribute('y', y - 2);
-        name.setAttribute('class', 'node-text');
+        const isCompactText = textPrimary.length > 14;
+        name.setAttribute('class', isCompactText ? 'node-text node-text-compact' : 'node-text');
         name.textContent = textPrimary;
         g.appendChild(name);
 

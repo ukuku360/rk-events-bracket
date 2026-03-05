@@ -429,7 +429,7 @@
 
       .bracket-panel.is-drawn .node-rect,
       .bracket-panel.is-drawn .line {
-        animation: settleIn 0.45s ease;
+        animation: none;
       }
 
       svg {
@@ -719,6 +719,10 @@
     </style>
   </head>
   <body>
+    <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+    <div id="championOverlay" style="display:none;position:fixed;inset:0;z-index:10000;pointer-events:none;align-items:center;justify-content:center;flex-direction:column;">
+      <div id="championBurst" style="font-size:clamp(2rem,8vw,5rem);font-weight:900;color:#fff;text-shadow:0 0 40px #f5a623,0 4px 24px rgba(0,0,0,0.5);letter-spacing:-0.02em;text-align:center;opacity:0;transform:scale(0.5);transition:none;"></div>
+    </div>
     <main class="page">
       <header class="hero">
         <div class="brand-row">
@@ -1469,7 +1473,7 @@
         }
       }
 
-      function selectWinner(childLevel, childMatchIndex, winnerEntrantIndex) {
+      function selectWinner(childLevel, childMatchIndex, winnerEntrantIndex, clientX, clientY) {
         if (!isRosterFinalized || !canUseRosterControls()) {
           return;
         }
@@ -1497,6 +1501,19 @@
         }
 
         matchWinners[key] = winnerEntrantIndex;
+
+        // Trigger confetti / champion celebration
+        const cx = clientX ?? window.innerWidth / 2;
+        const cy = clientY ?? window.innerHeight / 2;
+        if (parentLevel === 4) {
+          const entrants = getBracketEntrants();
+          while (entrants.length < MAX_PLAYERS) entrants.push({ empty: true });
+          const champPlayer = entrants[winnerEntrantIndex];
+          const champName = champPlayer && !champPlayer.empty ? champPlayer.name : '챔피언';
+          triggerChampionCelebration(champName);
+        } else {
+          triggerWinnerConfetti(cx, cy);
+        }
 
         renderBracket();
         persistLocalEventState();
@@ -1631,7 +1648,7 @@
                 if (canControl) {
                   clickable = true;
                   const idx = nodeIdx;
-                  onClick = () => selectWinner(0, idx, idx);
+                  onClick = (e) => selectWinner(0, idx, idx, e.clientX, e.clientY);
                 }
               }
             } else if (levelIdx === 4) {
@@ -1674,7 +1691,7 @@
                   const lvl = levelIdx;
                   const mi = nodeIdx;
                   const wi = winnerIdx;
-                  onClick = () => selectWinner(lvl, mi, wi);
+                  onClick = (e) => selectWinner(lvl, mi, wi, e.clientX, e.clientY);
                 }
               } else {
                 textPrimary = 'Winner to be decided';
@@ -1899,6 +1916,154 @@
           },
         );
       }
+
+      // ─── Confetti System ──────────────────────────────────────────────────────
+
+      const confettiCanvas = document.getElementById('confettiCanvas');
+      const confettiCtx = confettiCanvas.getContext('2d');
+      let confettiParticles = [];
+      let confettiAnimId = null;
+      const championOverlay = document.getElementById('championOverlay');
+      const championBurst = document.getElementById('championBurst');
+
+      function resizeConfettiCanvas() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+      }
+      resizeConfettiCanvas();
+      window.addEventListener('resize', resizeConfettiCanvas);
+
+      function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+        let rot = (Math.PI / 2) * 3;
+        const step = Math.PI / spikes;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerR);
+        for (let i = 0; i < spikes; i++) {
+          ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+          rot += step;
+          ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+          rot += step;
+        }
+        ctx.lineTo(cx, cy - outerR);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function spawnBurst(x, y, count, speed, gravity, decay, big) {
+        const colors = ['#de1f4a', '#ff6b8a', '#4caf50', '#f5a623', '#2196f3', '#9c27b0', '#00e5ff', '#ffeb3b', '#ff9800'];
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const s = speed * (0.4 + Math.random() * 0.6);
+          confettiParticles.push({
+            x, y,
+            vx: Math.cos(angle) * s,
+            vy: Math.sin(angle) * s - speed * 0.6,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size: big ? (5 + Math.random() * 9) : (3 + Math.random() * 4),
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.25,
+            life: 1,
+            decay,
+            gravity,
+            shape: big && Math.random() > 0.55 ? 'star' : 'rect',
+            aspect: 0.4 + Math.random() * 0.35,
+          });
+        }
+      }
+
+      function tickConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiParticles = confettiParticles.filter((p) => p.life > 0);
+
+        for (const p of confettiParticles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= 0.985;
+          p.rotation += p.rotSpeed;
+          p.life -= p.decay;
+
+          confettiCtx.save();
+          confettiCtx.globalAlpha = Math.max(0, p.life);
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate(p.rotation);
+          confettiCtx.fillStyle = p.color;
+          if (p.shape === 'star') {
+            drawStar(confettiCtx, 0, 0, 5, p.size, p.size * 0.4);
+          } else {
+            confettiCtx.fillRect(-p.size / 2, -p.size * p.aspect / 2, p.size, p.size * p.aspect);
+          }
+          confettiCtx.restore();
+        }
+
+        if (confettiParticles.length > 0) {
+          confettiAnimId = requestAnimationFrame(tickConfetti);
+        } else {
+          confettiAnimId = null;
+          confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }
+      }
+
+      function ensureConfettiRunning() {
+        if (!confettiAnimId) {
+          confettiAnimId = requestAnimationFrame(tickConfetti);
+        }
+      }
+
+      function triggerWinnerConfetti(cx, cy) {
+        spawnBurst(cx, cy, 40, 7, 0.28, 0.018, false);
+        ensureConfettiRunning();
+      }
+
+      let champTimeouts = [];
+
+      function triggerChampionCelebration(name) {
+        champTimeouts.forEach(clearTimeout);
+        champTimeouts = [];
+
+        // Multi-wave bursts across the screen
+        const w = confettiCanvas.width;
+        const h = confettiCanvas.height;
+
+        function wave(delay, positions) {
+          champTimeouts.push(setTimeout(() => {
+            for (const [x, y] of positions) {
+              spawnBurst(x, y, 80, 15, 0.22, 0.007, true);
+            }
+            ensureConfettiRunning();
+          }, delay));
+        }
+
+        wave(0,   [[w * 0.5, h * 0.45]]);
+        wave(180, [[w * 0.2, h * 0.5], [w * 0.8, h * 0.5]]);
+        wave(380, [[w * 0.1, h * 0.6], [w * 0.9, h * 0.6], [w * 0.5, h * 0.3]]);
+        wave(580, [[w * 0.35, h * 0.55], [w * 0.65, h * 0.55]]);
+        wave(820, [[w * 0.5, h * 0.5]]);
+
+        // Champion name overlay
+        championBurst.textContent = `🏆 ${name}`;
+        championOverlay.style.display = 'flex';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            championBurst.style.transition = 'opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
+            championBurst.style.opacity = '1';
+            championBurst.style.transform = 'scale(1)';
+          });
+        });
+
+        champTimeouts.push(setTimeout(() => {
+          championBurst.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+          championBurst.style.opacity = '0';
+          championBurst.style.transform = 'scale(1.1)';
+          champTimeouts.push(setTimeout(() => {
+            championOverlay.style.display = 'none';
+            championBurst.style.transition = 'none';
+            championBurst.style.transform = 'scale(0.5)';
+          }, 620));
+        }, 2800));
+      }
+
+      // ─── End Confetti System ──────────────────────────────────────────────────
 
       async function initializeProject() {
         eventId = getOrCreateEventId();

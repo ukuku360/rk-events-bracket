@@ -1054,6 +1054,10 @@
         return isAdmin() && currentView === 'admin';
       }
 
+      function canUseRosterControls() {
+        return isAdmin();
+      }
+
       function switchView(nextView) {
         if (isSwitchingViews) {
           return;
@@ -1243,7 +1247,7 @@
           addButton.disabled = true;
         }
 
-        const canControlRoster = canUseAdminControls();
+        const canControlRoster = canUseRosterControls();
         if (clearButton) {
           clearButton.disabled = !canControlRoster;
         }
@@ -1251,10 +1255,6 @@
         if (!canControlRoster) {
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Draw Roster';
-        } else if (isRosterFinalized) {
-          drawRosterButton.disabled = true;
-          drawRosterButton.textContent = 'Roster Locked';
-          bracketPanel.classList.add('is-drawn');
         } else if (isShufflingRoster) {
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Drawing...';
@@ -1263,16 +1263,18 @@
           drawRosterButton.textContent = 'Draw Roster';
         }
 
+        bracketPanel.classList.toggle('is-drawn', isRosterFinalized);
+
         if (isShufflingRoster) {
           rosterStatus.textContent = 'Drawing roster now. The final matchups will be set shortly.';
+        } else if (players.length < MAX_PLAYERS) {
+          rosterStatus.textContent = `${MAX_PLAYERS - players.length} more participants needed before drawing can start.`;
         } else if (!isFirebaseAvailable) {
           rosterStatus.textContent = 'Running in local mode. Configure Firebase to sync this bracket across devices.';
         } else if (isRosterFinalized) {
-          rosterStatus.textContent = 'Roster is locked. The bracket will not change unless reset.';
-        } else if (players.length < MAX_PLAYERS) {
-          rosterStatus.textContent = `${MAX_PLAYERS - players.length} more participants needed before drawing can start.`;
+          rosterStatus.textContent = 'Roster is active. Click "Draw Roster" again to reshuffle.';
         } else {
-          rosterStatus.textContent = 'All participants are in. Click "Draw Roster" to lock a random bracket.';
+          rosterStatus.textContent = 'All participants are in. Click "Draw Roster" to shuffle bracket.';
         }
       }
 
@@ -1284,11 +1286,11 @@
       }
 
       async function applyRosterDecision() {
-        if (!canUseAdminControls()) {
+        if (!canUseRosterControls()) {
           return;
         }
 
-        if (isRosterFinalized || isShufflingRoster || players.length < MAX_PLAYERS) {
+        if (isShufflingRoster || players.length < MAX_PLAYERS) {
           return;
         }
 
@@ -1297,8 +1299,8 @@
 
         if (!isFirebaseAvailable || !eventRef) {
           rosterOrder = finalizedIds;
+          isRosterFinalized = true;
           setTimeout(() => {
-            isRosterFinalized = true;
             setRosterShuffleMode(false);
             bracketPanel.classList.add('is-drawn');
             renderBracket();
@@ -1320,10 +1322,6 @@
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp(),
                 };
-              }
-
-              if (snapshot.isRosterFinalized) {
-                return;
               }
 
               return {

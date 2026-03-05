@@ -519,6 +519,10 @@
         display: none;
       }
 
+      body.bracket-focus .content > .panel:not(.bracket-panel) {
+        display: none !important;
+      }
+
       body.bracket-focus .page {
         max-width: none;
         padding: 10px;
@@ -733,7 +737,6 @@
             <button type="button" id="adminLogoutButton" class="hidden">로그아웃</button>
           </div>
           <div class="actions hidden" id="adminActionGroup">
-            <button type="button" id="drawRosterButton" class="draw-toggle" aria-live="polite">Draw Roster</button>
             <button type="button" id="clearButton">Reset</button>
           </div>
           <p class="small" id="adminCountText">Entries: 0 / 16</p>
@@ -747,6 +750,7 @@
               <p class="roster-status" id="rosterStatus">Roster can be drawn once all 16 participants have signed up.</p>
             </div>
             <div class="bracket-controls">
+              <button type="button" id="drawRosterButton" class="draw-toggle" aria-live="polite">Draw Roster</button>
               <button type="button" id="focusToggle" class="focus-toggle" aria-pressed="false">Enlarge Bracket</button>
             </div>
           </div>

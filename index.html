@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Table Tennis Tournament Bracket</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+      :root {
+        --brand: #de1f4a;
+        --brand-deep: #b41038;
+        --brand-soft: #ffe8ef;
+        --line: #d02b54;
+        --text: #281420;
+        --muted: #7c5464;
+        --panel: #ffffff;
+        --panel-border: #f2c8d5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: 'Noto Sans KR', 'Space Grotesk', 'Segoe UI', sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 700px at 88% 0%, #ffdbe7 0%, transparent 60%),
+          radial-gradient(900px 700px at 0% 100%, #ffe5ec 0%, transparent 60%),
+          linear-gradient(155deg, #fffcfd 0%, #fff2f6 40%, #fff8fb 100%);
+      }
+
+      .page {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 24px 24px 36px;
+      }
+
+      .hero {
+        margin-bottom: 18px;
+        animation: rise 0.55s ease both;
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .brand-mark {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 100%);
+        color: #fff;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        box-shadow: 0 10px 22px rgba(175, 16, 57, 0.28);
+      }
+
+      .brand-wordmark {
+        display: inline-flex;
+        align-items: center;
+        height: 58px;
+        padding: 0 18px;
+        border-radius: 14px;
+        background: var(--brand);
+        color: #fff;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        font-size: 44px;
+        line-height: 1;
+        letter-spacing: -0.045em;
+        font-weight: 600;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        font-size: 34px;
+        letter-spacing: -0.03em;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .hero-cta {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .share-status {
+        margin: 0;
+        color: #7a4959;
+        font-size: 13px;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 360px minmax(640px, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, var(--panel) 0%, #fff7fa 90%);
+        border-radius: 20px;
+        border: 1px solid var(--panel-border);
+        padding: 18px;
+        box-shadow: 0 18px 40px rgba(161, 20, 58, 0.12);
+        animation: rise 0.6s ease both;
+      }
+
+      .panel h2 {
+        margin: 2px 0 14px;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        letter-spacing: -0.02em;
+      }
+
+      .event-summary {
+        margin-bottom: 18px;
+      }
+
+      .event-summary ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        color: #5f3f4d;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #633748;
+      }
+
+      input,
+      button {
+        border-radius: 11px;
+        padding: 11px 12px;
+        font: inherit;
+      }
+
+      input {
+        border: 1px solid #ecb8c8;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input::placeholder {
+        color: #a78591;
+      }
+
+      input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 4px rgba(222, 31, 74, 0.14);
+      }
+
+      button {
+        border: none;
+        background: linear-gradient(140deg, var(--brand), #c5143f);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      }
+
+      button:hover:not([disabled]) {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(180, 16, 56, 0.24);
+      }
+
+      button:active:not([disabled]) {
+        transform: translateY(0);
+      }
+
+      button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .small {
+        color: #8b5b6d;
+        font-size: 13px;
+        margin: 12px 0 0;
+      }
+
+      .players {
+        margin-top: 12px;
+        max-height: 280px;
+        overflow: auto;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .players li {
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px solid #f1c8d5;
+        border-radius: 10px;
+        background: #fff;
+        font-size: 14px;
+      }
+
+      .actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+      }
+
+      #clearButton {
+        background: #fff;
+        color: var(--brand);
+        border: 1px solid #ecb8c8;
+      }
+
+      #clearButton:hover:not([disabled]) {
+        background: var(--brand-soft);
+      }
+
+      .bracket-panel {
+        min-width: 0;
+      }
+
+      .bracket-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .focus-toggle {
+        flex-shrink: 0;
+        border: 1px solid #efbbca;
+        border-radius: 999px;
+        padding: 8px 13px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--brand);
+        background: #fff;
+      }
+
+      .focus-toggle:hover {
+        background: var(--brand-soft);
+      }
+
+      .bracket-shell {
+        position: relative;
+        overflow: auto;
+        max-height: 72vh;
+        padding-bottom: 4px;
+        border-radius: 14px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 241, 246, 0.78)),
+          repeating-linear-gradient(90deg, transparent 0, transparent 95px, rgba(222, 31, 74, 0.03) 95px, rgba(222, 31, 74, 0.03) 96px);
+      }
+
+      .shuffle-overlay {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        border-radius: 14px;
+        background:
+          radial-gradient(320px 320px at 70% 12%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      .shuffle-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .shuffle-orbit {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 2px solid rgba(217, 40, 83, 0.25);
+        box-shadow:
+          inset 0 0 0 10px rgba(255, 255, 255, 0.75),
+          0 12px 32px rgba(186, 16, 56, 0.28);
+      }
+
+      .shuffle-orbit::before,
+      .shuffle-orbit::after {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: var(--brand);
+        border-right-color: var(--brand-soft);
+        animation: spin 1.15s linear infinite;
+      }
+
+      .shuffle-orbit::after {
+        inset: 34px;
+        animation-duration: 0.8s;
+        animation-direction: reverse;
+      }
+
+      .shuffle-text {
+        color: #3f1e2f;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        animation: textFlash 0.8s ease-in-out infinite;
+      }
+
+      .shuffle-subtext {
+        margin: -6px 0 0;
+        color: #6d4152;
+        font-size: 13px;
+      }
+
+      .bracket-panel.is-shuffling .node-rect {
+        animation: shuffleGlow 0.45s ease-in-out infinite alternate;
+      }
+
+      .bracket-panel.is-shuffling .line {
+        animation: shuffleDash 0.9s linear infinite;
+        stroke-dasharray: 4 6;
+      }
+
+      .bracket-panel.is-drawn .node-rect,
+      .bracket-panel.is-drawn .line {
+        animation: settleIn 0.45s ease;
+      }
+
+      svg {
+        display: block;
+        width: auto;
+        min-width: 100%;
+        height: auto;
+      }
+
+      .bracket-title {
+        text-align: left;
+        font-size: 16px;
+        margin: 0;
+        color: #4d2636;
+        font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+        letter-spacing: -0.01em;
+      }
+
+      .roster-status {
+        margin: 0 0 10px;
+        color: #5d3040;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .bracket-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .draw-toggle {
+        flex-shrink: 0;
+        border: 1px solid #9f1539;
+        border-radius: 999px;
+        padding: 8px 13px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #fff;
+        background: linear-gradient(140deg, #ff2f5d, #b41038);
+      }
+
+      .draw-toggle:hover:not([disabled]) {
+        background: linear-gradient(140deg, #ff3f6a, #c5143f);
+      }
+
+      .node-rect {
+        fill: #fff;
+        stroke: var(--line);
+        stroke-width: 1.4;
+      }
+
+      .node-placeholder {
+        fill: #fff3f7;
+        stroke: #efb5c6;
+      }
+
+      .node-text {
+        fill: #3a1d2a;
+        font-size: 11px;
+        font-weight: 700;
+        text-anchor: middle;
+      }
+
+      .node-meta {
+        fill: #855062;
+        font-size: 9px;
+        text-anchor: middle;
+      }
+
+      .line {
+        stroke: #c92853;
+        stroke-width: 1.5;
+        fill: none;
+      }
+
+      body.bracket-focus {
+        overflow: hidden;
+      }
+
+      body.bracket-focus .hero,
+      body.bracket-focus .event-summary,
+      body.bracket-focus .content > section:first-child {
+        display: none;
+      }
+
+      body.bracket-focus .page {
+        max-width: none;
+        padding: 10px;
+      }
+
+      body.bracket-focus .content {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      body.bracket-focus .bracket-panel {
+        min-height: calc(100vh - 20px);
+        border-radius: 16px;
+      }
+
+      body.bracket-focus .bracket-shell {
+        max-height: calc(100vh - 92px);
+      }
+
+      body.bracket-focus .focus-toggle {
+        border-color: transparent;
+        color: #fff;
+        background: linear-gradient(140deg, var(--brand), #c5143f);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes textFlash {
+        from {
+          opacity: 0.45;
+        }
+
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes shuffleGlow {
+        from {
+          filter: drop-shadow(0 0 0 rgba(217, 40, 83, 0));
+        }
+
+        to {
+          filter: drop-shadow(0 0 12px rgba(217, 40, 83, 0.38));
+        }
+      }
+
+      @keyframes shuffleDash {
+        from {
+          stroke-dashoffset: 0;
+        }
+
+        to {
+          stroke-dashoffset: 10;
+        }
+      }
+
+      @keyframes settleIn {
+        from {
+          transform: scale(0.98);
+          opacity: 0.6;
+        }
+
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .page {
+          padding: 18px;
+        }
+
+        .brand-mark {
+          width: 50px;
+          height: 50px;
+          border-radius: 12px;
+          font-size: 24px;
+        }
+
+        .brand-wordmark {
+          height: 50px;
+          font-size: 32px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        h1 {
+          font-size: 26px;
+        }
+
+        .subtitle {
+          font-size: 14px;
+        }
+
+        .panel {
+          padding: 14px;
+        }
+
+        .brand-row {
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+
+        .brand-mark {
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
+          font-size: 20px;
+        }
+
+        .brand-wordmark {
+          height: 44px;
+          padding: 0 12px;
+          border-radius: 10px;
+          font-size: 24px;
+        }
+
+        .focus-toggle {
+          padding: 7px 11px;
+          font-size: 12px;
+        }
+
+        .draw-toggle {
+          padding: 7px 11px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">R</div>
+          <div class="brand-wordmark" aria-label="RoomingKos">RoomingKos</div>
+        </div>
+        <h1>Swanston Table Tennis Tournament</h1>
+        <p class="subtitle">Single-elimination bracket (16 entrants). Player slots are displayed at the bottom and the champion position is connected upward.</p>
+        <div class="hero-cta">
+          <button type="button" id="shareButton">Share This Event</button>
+          <p class="share-status" id="shareStatus" aria-live="polite"></p>
+        </div>
+      </header>
+      <div class="panel event-summary">
+        <strong>Event Summary</strong>
+        <ul>
+          <li><strong>Only 16 slots</strong> open — secure your place now.</li>
+          <li>Champion reward: <strong>Woolworths</strong> voucher and bragging rights.</li>
+          <li>Great 1st / 2nd / 3rd prizes to join the fun and take the court.</li>
+        </ul>
+      </div>
+
+      <div class="content">
+        <section class="panel">
+          <h2>Player Registration</h2>
+          <form id="signupForm">
+            <label>
+              <span>Name</span>
+              <input id="name" name="name" type="text" placeholder="e.g. Minji" required />
+            </label>
+            <label>
+              <span>Aura Skill</span>
+              <input id="aura" name="aura" type="text" placeholder="e.g. Quick reflex" required />
+            </label>
+            <label>
+              <span>Weak Point (for fun)</span>
+              <input id="weak" name="weak" type="text" placeholder="e.g. Slow in long rallies" required />
+            </label>
+            <button type="submit" id="addButton">Add Participant</button>
+          </form>
+
+          <p class="small" id="countText">Entries: 0 / 16</p>
+
+          <ul class="players" id="playerList"></ul>
+
+          <div class="actions">
+            <button type="button" id="clearButton">Reset</button>
+          </div>
+        </section>
+
+        <section class="panel bracket-panel">
+          <div class="bracket-header">
+            <div>
+              <h2 class="bracket-title">Bracket (16 Entrant Layout)</h2>
+              <p class="roster-status" id="rosterStatus">Roster can be drawn once all 16 participants have signed up.</p>
+            </div>
+            <div class="bracket-controls">
+              <button type="button" id="drawRosterButton" class="draw-toggle" aria-live="polite">Draw Roster</button>
+              <button type="button" id="focusToggle" class="focus-toggle" aria-pressed="false">Enlarge Bracket</button>
+            </div>
+          </div>
+          <div class="bracket-shell">
+            <div class="shuffle-overlay" id="shuffleOverlay" aria-hidden="true">
+              <div class="shuffle-orbit"></div>
+              <div class="shuffle-text">Drawing roster...</div>
+              <p class="shuffle-subtext">Players are being randomized and the final bracket will be locked.</p>
+            </div>
+            <svg id="bracketSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 760" role="img" aria-label="Bracket diagram">
+              <g id="edges"></g>
+              <g id="nodes"></g>
+            </svg>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const MAX_PLAYERS = 16;
+      const form = document.getElementById('signupForm');
+      const nameInput = document.getElementById('name');
+      const auraInput = document.getElementById('aura');
+      const weakInput = document.getElementById('weak');
+      const countText = document.getElementById('countText');
+      const listEl = document.getElementById('playerList');
+      const addButton = document.getElementById('addButton');
+      const clearButton = document.getElementById('clearButton');
+      const focusToggle = document.getElementById('focusToggle');
+      const drawRosterButton = document.getElementById('drawRosterButton');
+      const shareButton = document.getElementById('shareButton');
+      const shareStatus = document.getElementById('shareStatus');
+      const bracketPanel = document.querySelector('.bracket-panel');
+      const shuffleOverlay = document.getElementById('shuffleOverlay');
+      const rosterStatus = document.getElementById('rosterStatus');
+      const bracketSvg = document.getElementById('bracketSvg');
+      const nodesLayer = document.getElementById('nodes');
+      const edgesLayer = document.getElementById('edges');
+
+      const NODE_WIDTH = 136;
+      const NODE_HEIGHT = 42;
+      const SLOT_GAP = 22;
+      const X_PADDING = 84;
+      const TOP_PADDING = 76;
+      const ROW_GAP = 132;
+      const BOTTOM_PADDING = 48;
+
+      const players = [];
+      let rosterOrder = [];
+      let isRosterFinalized = false;
+      let isShufflingRoster = false;
+      let isBracketFocus = false;
+
+      async function copyToClipboard(value) {
+        if (!navigator.clipboard || !window.isSecureContext) {
+          return false;
+        }
+
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+
+      async function shareEvent() {
+        const eventUrl = window.location.href;
+        const shareData = {
+          title: 'Swanston Table Tennis Tournament',
+          text: 'Reserve your spot for the 16-player knockout bracket at Roomingkos Swanston.',
+          url: eventUrl,
+        };
+
+        shareStatus.textContent = 'Preparing share link...';
+
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            shareStatus.textContent = 'Share successful.';
+          } else {
+            const copied = await copyToClipboard(eventUrl);
+            shareStatus.textContent = copied ? 'Link copied to clipboard.' : `Share link: ${eventUrl}`;
+          }
+        } catch (error) {
+          if (error && error.name === 'AbortError') {
+            shareStatus.textContent = '';
+            return;
+          }
+
+          const copied = await copyToClipboard(eventUrl);
+          if (copied) {
+            shareStatus.textContent = 'Link copied to clipboard.';
+          } else if (error && error.name === 'NotAllowedError') {
+            shareStatus.textContent = 'Please allow clipboard permission and try again.';
+          } else {
+            shareStatus.textContent = 'Unable to share automatically. Copy the URL from your browser bar.';
+          }
+        }
+      }
+
+      function setBracketFocusMode(enabled) {
+        isBracketFocus = enabled;
+        document.body.classList.toggle('bracket-focus', enabled);
+        focusToggle.textContent = enabled ? 'Back to normal view' : 'Enlarge Bracket';
+        focusToggle.setAttribute('aria-pressed', String(enabled));
+      }
+
+      function renderPlayerList() {
+        listEl.innerHTML = '';
+        players.forEach((p, index) => {
+          const item = document.createElement('li');
+          item.textContent = `${index + 1}. ${p.name} (Aura: ${p.aura}, Weak: ${p.weak})`;
+          listEl.appendChild(item);
+        });
+        countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
+        if (players.length >= MAX_PLAYERS) {
+          addButton.disabled = true;
+          countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (closed)`;
+        } else {
+          addButton.disabled = false;
+        }
+
+        if (isShufflingRoster) {
+          addButton.disabled = true;
+        }
+
+        if (isRosterFinalized) {
+          drawRosterButton.disabled = true;
+          drawRosterButton.textContent = 'Roster Locked';
+        } else if (isShufflingRoster) {
+          drawRosterButton.disabled = true;
+          drawRosterButton.textContent = 'Drawing...';
+        } else {
+          drawRosterButton.disabled = players.length < MAX_PLAYERS;
+          drawRosterButton.textContent = 'Draw Roster';
+        }
+
+        if (isShufflingRoster) {
+          rosterStatus.textContent = 'Drawing roster now. The final matchups will be set shortly.';
+        } else if (isRosterFinalized) {
+          rosterStatus.textContent = 'Roster is locked. The bracket will not change unless reset.';
+        } else if (players.length < MAX_PLAYERS) {
+          rosterStatus.textContent = `${MAX_PLAYERS - players.length} more participants needed before drawing can start.`;
+        } else {
+          rosterStatus.textContent = 'All participants are in. Click "Draw Roster" to lock a random bracket.';
+        }
+      }
+
+      function shuffleList(values) {
+        const next = [...values];
+        for (let i = next.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [next[i], next[j]] = [next[j], next[i]];
+        }
+        return next;
+      }
+
+      function setRosterShuffleMode(enabled) {
+        isShufflingRoster = enabled;
+        bracketPanel.classList.toggle('is-shuffling', enabled);
+        shuffleOverlay.classList.toggle('visible', enabled);
+        renderPlayerList();
+      }
+
+      function applyRosterDecision() {
+        if (isRosterFinalized || isShufflingRoster || players.length < MAX_PLAYERS) {
+          return;
+        }
+
+        setRosterShuffleMode(true);
+        const finalized = shuffleList(players);
+
+        setTimeout(() => {
+          rosterOrder = finalized;
+          isRosterFinalized = true;
+          setRosterShuffleMode(false);
+          bracketPanel.classList.add('is-drawn');
+          renderBracket();
+          renderPlayerList();
+        }, 1600);
+      }
+
+      function shortenText(value, maxLength) {
+        if (!value) return '';
+        return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
+      }
+
+      function makeNode(x, y, textPrimary, textMeta, isLeaf, isEmpty) {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x - NODE_WIDTH / 2);
+        rect.setAttribute('y', y - NODE_HEIGHT / 2);
+        rect.setAttribute('width', NODE_WIDTH);
+        rect.setAttribute('height', NODE_HEIGHT);
+        rect.setAttribute('rx', 10);
+        rect.setAttribute('class', `node-rect ${isLeaf && isEmpty ? 'node-placeholder' : ''}`);
+        g.appendChild(rect);
+
+        const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        name.setAttribute('x', x);
+        name.setAttribute('y', y - 2);
+        name.setAttribute('class', 'node-text');
+        name.textContent = textPrimary;
+        g.appendChild(name);
+
+        if (textMeta) {
+          const meta = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          meta.setAttribute('x', x);
+          meta.setAttribute('y', y + 13);
+          meta.setAttribute('class', 'node-meta');
+          meta.textContent = textMeta;
+          g.appendChild(meta);
+        }
+
+        nodesLayer.appendChild(g);
+      }
+
+      function drawConnector(from, to) {
+        const x1 = from.x;
+        const y1 = from.y + NODE_HEIGHT / 2;
+        const x2 = to.x;
+        const y2 = to.y - NODE_HEIGHT / 2;
+        const midY = (y1 + y2) / 2;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`);
+        path.setAttribute('class', 'line');
+        edgesLayer.appendChild(path);
+      }
+
+      function renderBracket() {
+        nodesLayer.innerHTML = '';
+        edgesLayer.innerHTML = '';
+
+        const sourcePlayers = isRosterFinalized ? rosterOrder : players;
+        const entrants = [...sourcePlayers];
+        while (entrants.length < MAX_PLAYERS) {
+          entrants.push({
+            name: 'Waiting',
+            aura: '',
+            weak: '',
+            empty: true,
+          });
+        }
+
+        const rounds = [16, 8, 4, 2, 1];
+        const levelNodes = [];
+        const totalLevels = rounds.length;
+
+        const slotSpacing = NODE_WIDTH + SLOT_GAP;
+        const svgWidth = X_PADDING * 2 + slotSpacing * (MAX_PLAYERS - 1);
+        const svgHeight = TOP_PADDING + ROW_GAP * (totalLevels - 1) + BOTTOM_PADDING;
+        const yBottom = TOP_PADDING + ROW_GAP * (totalLevels - 1);
+
+        bracketSvg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+        bracketSvg.setAttribute('width', `${svgWidth}`);
+        bracketSvg.setAttribute('height', `${svgHeight}`);
+        bracketSvg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+
+        levelNodes[0] = entrants.slice(0, 16).map((p, idx) => ({
+          x: X_PADDING + slotSpacing * idx,
+          y: yBottom,
+          name: p.empty ? 'Empty slot' : `${idx + 1}. ${shortenText(p.name, 12)}`,
+          aura: p.aura,
+          weak: p.weak,
+          isEmpty: !!p.empty,
+          isLeaf: true,
+        }));
+
+        for (let r = 1; r < rounds.length; r++) {
+          const prev = levelNodes[r - 1];
+          const count = rounds[r];
+          const level = [];
+          for (let i = 0; i < count; i++) {
+            const a = prev[i * 2];
+            const b = prev[i * 2 + 1];
+            level.push({
+              x: (a.x + b.x) / 2,
+              y: yBottom - ROW_GAP * r,
+              isLeaf: false,
+              isEmpty: a.isEmpty || b.isEmpty,
+            });
+          }
+          levelNodes[r] = level;
+        }
+
+        for (let r = rounds.length - 1; r > 0; r--) {
+          const current = levelNodes[r];
+          const previous = levelNodes[r - 1];
+          current.forEach((node, idx) => {
+            const left = previous[idx * 2];
+            const right = previous[idx * 2 + 1];
+            drawConnector(left, node);
+            drawConnector(right, node);
+          });
+        }
+
+        // Draw winner/semifinal/quarter/... nodes
+        levelNodes.forEach((level, levelIdx) => {
+          level.forEach((node, nodeIdx) => {
+            let title = '';
+            if (nodeIdx !== 0 || levelIdx !== 0) {
+              if (!node.isLeaf) {
+                title = 'Winner to be decided';
+              }
+            }
+
+            const metaText = node.isLeaf && !node.isEmpty ? `${shortenText(node.aura, 12)} / ${shortenText(node.weak, 12)}` : '';
+
+            makeNode(
+              node.x,
+              node.y,
+              node.isLeaf ? node.name : (levelIdx === 4 ? 'Champion' : title),
+              node.isLeaf ? metaText : '',
+              node.isLeaf,
+              node.isEmpty,
+            );
+          });
+        });
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (players.length >= MAX_PLAYERS) return;
+        players.push({
+          name: nameInput.value.trim(),
+          aura: auraInput.value.trim(),
+          weak: weakInput.value.trim(),
+        });
+        form.reset();
+        renderPlayerList();
+        renderBracket();
+      });
+
+      clearButton.addEventListener('click', () => {
+        players.length = 0;
+        rosterOrder = [];
+        isRosterFinalized = false;
+        setRosterShuffleMode(false);
+        bracketPanel.classList.remove('is-drawn');
+        renderPlayerList();
+        renderBracket();
+      });
+
+      focusToggle.addEventListener('click', () => {
+        setBracketFocusMode(!isBracketFocus);
+      });
+
+      drawRosterButton.addEventListener('click', applyRosterDecision);
+      shareButton.addEventListener('click', shareEvent);
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isBracketFocus) {
+          setBracketFocusMode(false);
+        }
+      });
+
+      setBracketFocusMode(document.body.classList.contains('bracket-focus'));
+      renderPlayerList();
+      renderBracket();
+    </script>
+  </body>
+</html>

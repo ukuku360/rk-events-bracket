@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Table Tennis Tournament Bracket</title>
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/svg+xml" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
@@ -683,30 +685,31 @@
 
     <script type="module">
       import {
-        addDoc,
-        collection,
-        doc,
-        getFirestore,
-        getDoc,
-        getDocs,
-        onSnapshot,
-        orderBy,
+        get,
+        getDatabase,
+        onValue,
+        orderByChild,
         query,
+        push,
+        ref,
+        remove,
         runTransaction,
         serverTimestamp,
-        setDoc,
-        writeBatch,
-      } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+        set,
+        update,
+      } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
 
       const FIREBASE_CONFIG = {
-        apiKey: 'YOUR_FIREBASE_API_KEY',
-        authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
-        projectId: 'YOUR_FIREBASE_PROJECT_ID',
-        storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
-        messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
-        appId: 'YOUR_FIREBASE_APP_ID',
+        apiKey: 'AIzaSyCzOfUMmq4QtR7JAvEHkwAZSSbwDez8JN4',
+        authDomain: 'rk-events-bracket-2708088.firebaseapp.com',
+        databaseURL: 'https://rk-events-bracket-2708088-default-rtdb.asia-southeast1.firebasedatabase.app',
+        projectId: 'rk-events-bracket-2708088',
+        storageBucket: 'rk-events-bracket-2708088.firebasestorage.app',
+        messagingSenderId: '924533299346',
+        appId: '1:924533299346:web:b181b022666c200a90ae4b',
       };
+      const EVENT_STATE_STORAGE_PREFIX = 'rk_tournament_event_state_v1_';
 
       const DEFAULT_EVENT_ID = 'swanston-table-tennis-tournament';
       const MAX_PLAYERS = 16;
@@ -750,6 +753,9 @@
       let isRosterFinalized = false;
       let isShufflingRoster = false;
       let isBracketFocus = false;
+      let firebaseRetryCount = 0;
+      const FIREBASE_MAX_RETRIES = 3;
+      const FIREBASE_RETRY_BASE_DELAY_MS = 3000;
 
       async function copyToClipboard(value) {
         if (!navigator.clipboard || !window.isSecureContext) {
@@ -769,13 +775,12 @@
         }
 
         const savedEventId = localStorage.getItem('rk_tournament_event_id');
-        if (savedEventId) {
-          return savedEventId;
+        if (savedEventId && savedEventId !== DEFAULT_EVENT_ID) {
+          localStorage.removeItem(`${EVENT_STATE_STORAGE_PREFIX}${savedEventId}`);
         }
 
-        const generated = `${DEFAULT_EVENT_ID}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36)}`;
-        localStorage.setItem('rk_tournament_event_id', generated);
-        return generated;
+        localStorage.setItem('rk_tournament_event_id', DEFAULT_EVENT_ID);
+        return DEFAULT_EVENT_ID;
       }
 
       function normalizeEventUrl() {
@@ -846,7 +851,112 @@
       }
 
       function setFirebaseModeNotice() {
-        shareStatus.textContent = 'Firebase is not configured. Please set your Firebase credentials to sync across devices.';
+        console.warn('[RK Events] Firebase is not configured. Running in local-only mode.');
+        shareStatus.textContent = 'Firebase is not configured. Running in local-only mode.';
+      }
+
+      function setFirebaseConnectionFailedNotice(error) {
+        console.error('[RK Events] Firebase connection failed:', error?.code || error?.message || error);
+        shareStatus.textContent = 'Unable to connect to Firebase. Retrying...';
+      }
+
+      async function retryFirebaseConnection() {
+        if (firebaseRetryCount >= FIREBASE_MAX_RETRIES) {
+          console.warn(`[RK Events] Firebase retry limit reached (${FIREBASE_MAX_RETRIES}).`);
+          shareStatus.textContent = 'Firebase unavailable. Refresh to try again.';
+          return;
+        }
+
+        firebaseRetryCount++;
+        const delay = FIREBASE_RETRY_BASE_DELAY_MS * Math.pow(2, firebaseRetryCount - 1);
+        console.log(`[RK Events] Retrying Firebase in ${delay}ms (attempt ${firebaseRetryCount}/${FIREBASE_MAX_RETRIES})...`);
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        try {
+          if (!db) {
+            app = initializeApp(FIREBASE_CONFIG);
+            db = getDatabase(app);
+          }
+          eventRef = ref(db, `events/${eventId}`);
+          participantsRef = ref(db, `events/${eventId}/participants`);
+          const snapshot = await get(eventRef);
+          if (!snapshot.exists()) {
+            await set(eventRef, {
+              title: 'Swanston Table Tennis Tournament',
+              maxPlayers: MAX_PLAYERS,
+              isRosterFinalized: false,
+              rosterOrder: [],
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          }
+
+          isFirebaseAvailable = true;
+          firebaseRetryCount = 0;
+          applyDatabaseSnapshots();
+          shareStatus.textContent = 'Live sync enabled. Share this page to collect registrations.';
+          console.log('[RK Events] Firebase reconnected successfully.');
+          renderPlayerList();
+          renderBracket();
+        } catch (retryError) {
+          console.error(`[RK Events] Retry attempt ${firebaseRetryCount} failed:`, retryError?.code || retryError?.message);
+          retryFirebaseConnection();
+        }
+      }
+
+      function restoreLocalEventState() {
+        if (!eventId) {
+          return;
+        }
+
+        const raw = localStorage.getItem(`${EVENT_STATE_STORAGE_PREFIX}${eventId}`);
+        if (!raw) {
+          return;
+        }
+
+        try {
+          const state = JSON.parse(raw);
+          if (!state || typeof state !== 'object') {
+            return;
+          }
+
+          if (Array.isArray(state.players)) {
+            players.length = 0;
+            state.players.forEach((player) => players.push(player));
+          }
+
+          if (Array.isArray(state.rosterOrder)) {
+            rosterOrder = state.rosterOrder;
+          }
+
+          if (typeof state.isRosterFinalized === 'boolean') {
+            isRosterFinalized = state.isRosterFinalized;
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      function persistLocalEventState() {
+        if (!eventId) {
+          return;
+        }
+
+        const state = {
+          players,
+          rosterOrder,
+          isRosterFinalized,
+          updatedAt: Date.now(),
+        };
+        localStorage.setItem(`${EVENT_STATE_STORAGE_PREFIX}${eventId}`, JSON.stringify(state));
+      }
+
+      function clearLocalEventState() {
+        if (!eventId) {
+          return;
+        }
+        localStorage.removeItem(`${EVENT_STATE_STORAGE_PREFIX}${eventId}`);
       }
 
       function renderPlayerList() {
@@ -916,38 +1026,35 @@
             bracketPanel.classList.add('is-drawn');
             renderBracket();
             renderPlayerList();
+            persistLocalEventState();
           }, 1600);
           return;
         }
 
         setTimeout(async () => {
           try {
-            await runTransaction(db, async (transaction) => {
-              const snapshot = await transaction.get(eventRef);
-              if (!snapshot.exists()) {
-                transaction.set(eventRef, {
+            await runTransaction(eventRef, (snapshot) => {
+              if (snapshot === null) {
+                return {
+                  title: 'Swanston Table Tennis Tournament',
                   maxPlayers: MAX_PLAYERS,
-                  isRosterFinalized: false,
-                  rosterOrder: [],
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
-                });
-                return;
-              }
-
-              if (snapshot.data()?.isRosterFinalized) {
-                return;
-              }
-
-              transaction.set(
-                eventRef,
-                {
                   isRosterFinalized: true,
                   rosterOrder: finalizedIds,
+                  createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp(),
-                },
-                { merge: true },
-              );
+                };
+              }
+
+              if (snapshot.isRosterFinalized) {
+                return;
+              }
+
+              return {
+                ...snapshot,
+                isRosterFinalized: true,
+                rosterOrder: finalizedIds,
+                updatedAt: serverTimestamp(),
+              };
             });
           } catch (error) {
             console.error(error);
@@ -1129,9 +1236,9 @@
         renderBracket();
       }
 
-      async function addParticipantToFirestore(player) {
+      async function addParticipantToDatabase(player) {
         try {
-          await addDoc(participantsRef, {
+          await set(push(participantsRef), {
             ...player,
             createdAt: serverTimestamp(),
           });
@@ -1146,6 +1253,7 @@
           players.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
+          clearLocalEventState();
           setRosterShuffleMode(false);
           bracketPanel.classList.remove('is-drawn');
           renderPlayerList();
@@ -1154,24 +1262,13 @@
         }
 
         try {
-          const snapshot = await getDocs(participantsRef);
-          const batch = writeBatch(db);
-
-          snapshot.forEach((docItem) => {
-            batch.delete(docItem.ref);
+          await remove(participantsRef);
+          await update(eventRef, {
+            rosterOrder: [],
+            isRosterFinalized: false,
+            updatedAt: serverTimestamp(),
           });
-
-          batch.set(
-            eventRef,
-            {
-              rosterOrder: [],
-              isRosterFinalized: false,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true },
-          );
-
-          await batch.commit();
+          clearLocalEventState();
         } catch (error) {
           console.error(error);
           shareStatus.textContent = 'Failed to reset tournament data.';
@@ -1194,12 +1291,13 @@
 
         if (!isFirebaseAvailable || !participantsRef) {
           players.push(player);
+          persistLocalEventState();
           renderPlayerList();
           renderBracket();
           return;
         }
 
-        await addParticipantToFirestore(player);
+        await addParticipantToDatabase(player);
       }
 
       function setEventListenersFromSnapshot() {
@@ -1220,43 +1318,45 @@
         });
       }
 
-      function applyFirestoreSnapshots() {
+      function applyDatabaseSnapshots() {
         if (!db) {
           return;
         }
 
-        participantsUnsub = onSnapshot(
-          query(participantsRef, orderBy('createdAt', 'asc')),
+        participantsUnsub = onValue(
+          query(participantsRef, orderByChild('createdAt')),
           (snapshot) => {
             players.length = 0;
             snapshot.forEach((docItem) => {
               players.push({
-                id: docItem.id,
-                ...docItem.data(),
+                id: docItem.key,
+                ...docItem.val(),
               });
             });
+            console.log('[RK Events] Participants snapshot:', players.length, 'players');
 
+            persistLocalEventState();
             renderPlayerList();
             renderBracket();
           },
           (error) => {
-            console.error(error);
+            console.error('[RK Events] Participants listener error:', error?.code, error?.message);
             shareStatus.textContent = 'Realtime sync error. Refreshing list from local input.';
-            isFirebaseAvailable = false;
             initializeEmptyEntriesFallback();
           },
         );
 
-        eventUnsub = onSnapshot(
+        eventUnsub = onValue(
           eventRef,
           (snapshot) => {
             if (!snapshot.exists()) {
               return;
             }
 
-            const data = snapshot.data();
+            const data = snapshot.val();
             rosterOrder = Array.isArray(data?.rosterOrder) ? data.rosterOrder : [];
             isRosterFinalized = Boolean(data?.isRosterFinalized);
+            persistLocalEventState();
 
             if (isRosterFinalized) {
               bracketPanel.classList.add('is-drawn');
@@ -1268,8 +1368,7 @@
             renderBracket();
           },
           (error) => {
-            console.error(error);
-            isFirebaseAvailable = false;
+            console.error('[RK Events] Event listener error:', error?.code, error?.message);
             shareStatus.textContent = 'Failed to sync bracket state.';
             initializeEmptyEntriesFallback();
           },
@@ -1278,9 +1377,15 @@
 
       async function initializeProject() {
         eventId = getOrCreateEventId();
+        console.log('[RK Events] Event ID:', eventId);
         normalizeEventUrl();
+        restoreLocalEventState();
+        console.log('[RK Events] Local state:', players.length, 'players, roster finalized:', isRosterFinalized);
+        renderPlayerList();
+        renderBracket();
 
         if (!isFirebaseConfigured()) {
+          console.warn('[RK Events] Firebase config has placeholder values.');
           isFirebaseAvailable = false;
           setFirebaseModeNotice();
           initializeEmptyEntriesFallback();
@@ -1289,30 +1394,32 @@
 
         try {
           app = initializeApp(FIREBASE_CONFIG);
-          db = getFirestore(app);
-          eventRef = doc(db, 'events', eventId);
-          participantsRef = collection(eventRef, 'participants');
-          await getDoc(eventRef).then(async (snapshot) => {
-            if (!snapshot.exists()) {
-              await setDoc(eventRef, {
-                title: 'Swanston Table Tennis Tournament',
-                maxPlayers: MAX_PLAYERS,
-                isRosterFinalized: false,
-                rosterOrder: [],
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-              });
-            }
-          });
-          applyFirestoreSnapshots();
+          db = getDatabase(app);
+          eventRef = ref(db, `events/${eventId}`);
+          participantsRef = ref(db, `events/${eventId}/participants`);
+          const snapshot = await get(eventRef);
+          if (!snapshot.exists()) {
+            await set(eventRef, {
+              title: 'Swanston Table Tennis Tournament',
+              maxPlayers: MAX_PLAYERS,
+              isRosterFinalized: false,
+              rosterOrder: [],
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          }
+
+          applyDatabaseSnapshots();
+          console.log('[RK Events] Firebase connected. Real-time listeners active.');
           shareStatus.textContent = 'Live sync enabled. Share this page to collect registrations.';
           renderPlayerList();
           renderBracket();
         } catch (error) {
-          console.error(error);
+          console.error('[RK Events] Firebase initialization error:', error);
           isFirebaseAvailable = false;
-          setFirebaseModeNotice();
+          setFirebaseConnectionFailedNotice(error);
           initializeEmptyEntriesFallback();
+          retryFirebaseConnection();
         }
       }
 

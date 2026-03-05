@@ -503,6 +503,46 @@
         text-anchor: middle;
       }
 
+      g.node-clickable {
+        cursor: pointer;
+      }
+
+      g.node-clickable:hover .node-rect {
+        filter: drop-shadow(0 0 6px rgba(222, 31, 74, 0.35));
+        stroke-width: 2.2;
+      }
+
+      g.node-winner .node-rect {
+        fill: #e8f5e9;
+        stroke: #4caf50;
+        stroke-width: 2;
+      }
+
+      g.node-winner .node-text {
+        fill: #2e7d32;
+      }
+
+      g.node-loser .node-rect {
+        fill: #fafafa;
+        stroke: #d4a0b0;
+      }
+
+      g.node-loser .node-text,
+      g.node-loser .node-meta {
+        opacity: 0.45;
+      }
+
+      g.node-champion .node-rect {
+        fill: #fff9e6;
+        stroke: #f5a623;
+        stroke-width: 2.5;
+      }
+
+      g.node-champion .node-text {
+        fill: #b8860b;
+        font-size: 12px;
+      }
+
       .line {
         stroke: #c92853;
         stroke-width: 1.5;
@@ -850,6 +890,7 @@
       let rosterOrder = [];
       let isRosterFinalized = false;
       let isShufflingRoster = false;
+      let matchWinners = {};
       let isBracketFocus = false;
       let isAdminMode = false;
       let currentView = 'user';
@@ -1194,6 +1235,10 @@
           if (typeof state.isRosterFinalized === 'boolean') {
             isRosterFinalized = state.isRosterFinalized;
           }
+
+          if (state.matchWinners && typeof state.matchWinners === 'object') {
+            matchWinners = state.matchWinners;
+          }
         } catch (error) {
           console.error(error);
         }
@@ -1208,6 +1253,7 @@
           players,
           rosterOrder,
           isRosterFinalized,
+          matchWinners,
           updatedAt: Date.now(),
         };
         localStorage.setItem(`${EVENT_STATE_STORAGE_PREFIX}${eventId}`, JSON.stringify(state));
@@ -1258,7 +1304,7 @@
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Drawing...';
         } else {
-          drawRosterButton.disabled = players.length < MAX_PLAYERS;
+          drawRosterButton.disabled = players.length < 2;
           drawRosterButton.textContent = 'Draw Roster';
         }
 
@@ -1266,8 +1312,10 @@
 
         if (isShufflingRoster) {
           rosterStatus.textContent = 'Drawing roster now. The final matchups will be set shortly.';
+        } else if (players.length < 2) {
+          rosterStatus.textContent = 'At least 2 participants are needed to draw a roster.';
         } else if (players.length < MAX_PLAYERS) {
-          rosterStatus.textContent = `${MAX_PLAYERS - players.length} more participants needed before drawing can start.`;
+          rosterStatus.textContent = `${players.length} of ${MAX_PLAYERS} slots filled. You can draw now or wait for more participants.`;
         } else if (!isFirebaseAvailable) {
           rosterStatus.textContent = 'Running in local mode. Configure Firebase to sync this bracket across devices.';
         } else if (isRosterFinalized) {
@@ -1289,7 +1337,12 @@
           return;
         }
 
-        if (isShufflingRoster || players.length < MAX_PLAYERS) {
+        if (isShufflingRoster) {
+          return;
+        }
+
+        if (players.length < 2) {
+          rosterStatus.textContent = 'At least 2 participants are needed to draw a roster.';
           return;
         }
 
@@ -1300,6 +1353,7 @@
           try {
             rosterOrder = [...finalizedIds];
             isRosterFinalized = true;
+            matchWinners = {};
             renderBracket();
             renderPlayerList();
             persistLocalEventState();
@@ -1308,6 +1362,7 @@
               await update(eventRef, {
                 isRosterFinalized: true,
                 rosterOrder: finalizedIds,
+                matchWinners: {},
                 maxPlayers: MAX_PLAYERS,
                 updatedAt: serverTimestamp(),
               });
@@ -1345,8 +1400,16 @@
         return `${value.slice(0, headLength)}…${suffix}`;
       }
 
-      function makeNode(x, y, textPrimary, textMeta, isLeaf, isEmpty) {
+      function makeNode(x, y, textPrimary, textMeta, isLeaf, isEmpty, options = {}) {
+        const { clickable = false, isWinner = false, isLoser = false, isChampion = false, onClick } = options;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+        const gClasses = [];
+        if (clickable) gClasses.push('node-clickable');
+        if (isWinner) gClasses.push('node-winner');
+        if (isLoser) gClasses.push('node-loser');
+        if (isChampion) gClasses.push('node-champion');
+        if (gClasses.length) g.setAttribute('class', gClasses.join(' '));
 
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         rect.setAttribute('x', x - NODE_WIDTH / 2);
@@ -1373,6 +1436,11 @@
           g.appendChild(meta);
         }
 
+        if (clickable && onClick) {
+          g.style.cursor = 'pointer';
+          g.addEventListener('click', onClick);
+        }
+
         nodesLayer.appendChild(g);
       }
 
@@ -1387,6 +1455,55 @@
         path.setAttribute('d', `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`);
         path.setAttribute('class', 'line');
         edgesLayer.appendChild(path);
+      }
+
+      function clearDependentWinners(level, matchIndex) {
+        const key = `${level}-${matchIndex}`;
+        if (matchWinners[key] !== undefined) {
+          delete matchWinners[key];
+          const parentLevel = level + 1;
+          const parentMatchIndex = Math.floor(matchIndex / 2);
+          if (parentLevel <= 4) {
+            clearDependentWinners(parentLevel, parentMatchIndex);
+          }
+        }
+      }
+
+      function selectWinner(childLevel, childMatchIndex, winnerEntrantIndex) {
+        if (!isRosterFinalized || !canUseRosterControls()) {
+          return;
+        }
+
+        const parentLevel = childLevel + 1;
+        const parentMatchIndex = Math.floor(childMatchIndex / 2);
+
+        if (parentLevel > 4) {
+          return;
+        }
+
+        const key = `${parentLevel}-${parentMatchIndex}`;
+        const previousWinner = matchWinners[key];
+
+        if (previousWinner === winnerEntrantIndex) {
+          return;
+        }
+
+        if (previousWinner !== undefined) {
+          const grandparentLevel = parentLevel + 1;
+          const grandparentMatchIndex = Math.floor(parentMatchIndex / 2);
+          if (grandparentLevel <= 4) {
+            clearDependentWinners(grandparentLevel, grandparentMatchIndex);
+          }
+        }
+
+        matchWinners[key] = winnerEntrantIndex;
+
+        renderBracket();
+        persistLocalEventState();
+
+        if (isFirebaseAvailable && eventRef) {
+          update(eventRef, { matchWinners, updatedAt: serverTimestamp() });
+        }
       }
 
       function getBracketEntrants() {
@@ -1481,25 +1598,97 @@
           });
         }
 
-        // Draw winner/semifinal/quarter/... nodes
+        // Draw nodes with winner selection logic
+        const canControl = isRosterFinalized && canUseRosterControls();
+
         levelNodes.forEach((level, levelIdx) => {
           level.forEach((node, nodeIdx) => {
-            let title = '';
-            if (nodeIdx !== 0 || levelIdx !== 0) {
-              if (!node.isLeaf) {
-                title = 'Winner to be decided';
+            let textPrimary = '';
+            let textMeta = '';
+            let clickable = false;
+            let isWinnerNode = false;
+            let isLoserNode = false;
+            let isChampionNode = false;
+            let onClick = null;
+
+            if (node.isLeaf) {
+              // Level 0: player slots
+              textPrimary = node.name;
+              textMeta = !node.isEmpty
+                ? `${shortenText(node.aura, 12)} / ${shortenText(node.weak, 12)}`
+                : '';
+
+              if (!node.isEmpty && isRosterFinalized) {
+                const parentKey = `1-${Math.floor(nodeIdx / 2)}`;
+                const parentWinner = matchWinners[parentKey];
+
+                if (parentWinner === nodeIdx) {
+                  isWinnerNode = true;
+                } else if (parentWinner !== undefined) {
+                  isLoserNode = true;
+                }
+
+                if (canControl) {
+                  clickable = true;
+                  const idx = nodeIdx;
+                  onClick = () => selectWinner(0, idx, idx);
+                }
+              }
+            } else if (levelIdx === 4) {
+              // Champion node
+              const champKey = '4-0';
+              const champIdx = matchWinners[champKey];
+              if (champIdx !== undefined) {
+                const champPlayer = entrants[champIdx];
+                if (champPlayer && !champPlayer.empty) {
+                  textPrimary = shortenPlayerName(champPlayer.name, 12);
+                  isChampionNode = true;
+                } else {
+                  textPrimary = 'Champion';
+                }
+              } else {
+                textPrimary = 'Champion';
+              }
+            } else {
+              // Levels 1-3: match nodes
+              const matchKey = `${levelIdx}-${nodeIdx}`;
+              const winnerIdx = matchWinners[matchKey];
+
+              if (winnerIdx !== undefined) {
+                const winnerPlayer = entrants[winnerIdx];
+                textPrimary = winnerPlayer && !winnerPlayer.empty
+                  ? shortenPlayerName(winnerPlayer.name, 12)
+                  : 'Winner to be decided';
+
+                // Check if this winner has been advanced to the parent
+                const parentKey = `${levelIdx + 1}-${Math.floor(nodeIdx / 2)}`;
+                const parentWinner = matchWinners[parentKey];
+                if (parentWinner === winnerIdx) {
+                  isWinnerNode = true;
+                } else if (parentWinner !== undefined) {
+                  isLoserNode = true;
+                }
+
+                if (canControl) {
+                  clickable = true;
+                  const lvl = levelIdx;
+                  const mi = nodeIdx;
+                  const wi = winnerIdx;
+                  onClick = () => selectWinner(lvl, mi, wi);
+                }
+              } else {
+                textPrimary = 'Winner to be decided';
               }
             }
-
-            const metaText = node.isLeaf && !node.isEmpty ? `${shortenText(node.aura, 12)} / ${shortenText(node.weak, 12)}` : '';
 
             makeNode(
               node.x,
               node.y,
-              node.isLeaf ? node.name : (levelIdx === 4 ? 'Champion' : title),
-              node.isLeaf ? metaText : '',
+              textPrimary,
+              textMeta,
               node.isLeaf,
               node.isEmpty,
+              { clickable, isWinner: isWinnerNode, isLoser: isLoserNode, isChampion: isChampionNode, onClick },
             );
           });
         });
@@ -1565,6 +1754,7 @@
           players.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
+          matchWinners = {};
           clearLocalEventState();
           setRosterShuffleMode(false);
           bracketPanel.classList.remove('is-drawn');
@@ -1578,6 +1768,7 @@
           await update(eventRef, {
             rosterOrder: [],
             isRosterFinalized: false,
+            matchWinners: {},
             updatedAt: serverTimestamp(),
           });
           clearLocalEventState();
@@ -1687,6 +1878,9 @@
             const data = snapshot.val();
             rosterOrder = Array.isArray(data?.rosterOrder) ? data.rosterOrder : [];
             isRosterFinalized = Boolean(data?.isRosterFinalized);
+            matchWinners = (data?.matchWinners && typeof data.matchWinners === 'object')
+              ? data.matchWinners
+              : {};
             persistLocalEventState();
 
             if (isRosterFinalized) {

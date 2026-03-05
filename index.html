@@ -221,11 +221,79 @@
 
       .players li {
         margin: 0;
-        padding: 8px 10px;
+        padding: 0;
         border: 1px solid #f1c8d5;
         border-radius: 10px;
         background: #fff;
         font-size: 14px;
+      }
+
+      .player-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+      }
+
+      .player-row span {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .admin-delete {
+        flex-shrink: 0;
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 8px;
+        border: 1px solid #ecb8c8;
+        color: #a01a40;
+        background: #fff;
+      }
+
+      .admin-delete:hover:not([disabled]) {
+        background: #ffe4ee;
+      }
+
+      .admin-delete:disabled {
+        opacity: 0.35;
+      }
+
+      .mode-switch {
+        display: inline-flex;
+        gap: 8px;
+        margin-top: 10px;
+        margin-bottom: 6px;
+      }
+
+      .mode-tab {
+        padding: 8px 12px;
+        border: 1px solid #ecb8c8;
+        border-radius: 999px;
+        background: #fff;
+        color: #7a4f60;
+      }
+
+      .mode-tab.active {
+        background: linear-gradient(140deg, var(--brand), #c5143f);
+        color: #fff;
+        border-color: #9f1539;
+      }
+
+      .mode-admin-note {
+        font-size: 13px;
+        color: #8b5b6d;
+      }
+
+      .view-panel {
+        animation: rise 0.5s ease both;
+      }
+
+      .hidden {
+        display: none !important;
       }
 
       .actions {
@@ -615,6 +683,10 @@
         </div>
         <h1>Swanston Table Tennis Tournament</h1>
         <p class="subtitle">Single-elimination bracket (16 entrants). Player slots are displayed at the bottom and the champion position is connected upward.</p>
+        <div class="mode-switch" role="tablist" aria-label="View mode">
+          <button type="button" id="userTab" class="mode-tab active" role="tab" aria-pressed="true" aria-controls="userPanel" data-view="user">참가자 화면</button>
+          <button type="button" id="adminTab" class="mode-tab" role="tab" aria-pressed="false" aria-controls="adminPanel" data-view="admin">관리자</button>
+        </div>
         <div class="hero-cta">
           <button type="button" id="shareButton">Share This Event</button>
           <p class="share-status" id="shareStatus" aria-live="polite"></p>
@@ -630,7 +702,7 @@
       </div>
 
       <div class="content">
-        <section class="panel">
+        <section class="panel view-panel" id="userPanel" role="tabpanel" aria-labelledby="userTab">
           <h2>Player Registration</h2>
           <form id="signupForm">
             <label>
@@ -651,10 +723,21 @@
           <p class="small" id="countText">Entries: 0 / 16</p>
 
           <ul class="players" id="playerList"></ul>
+        </section>
 
+        <section class="panel view-panel hidden" id="adminPanel" role="tabpanel" aria-labelledby="adminTab">
+          <h2>Admin Dashboard</h2>
+          <p class="mode-admin-note" id="adminStatus">관리자 로그인이 필요합니다.</p>
           <div class="actions">
+            <button type="button" id="adminUnlockButton">관리자 로그인</button>
+            <button type="button" id="adminLogoutButton" class="hidden">로그아웃</button>
+          </div>
+          <div class="actions hidden" id="adminActionGroup">
+            <button type="button" id="drawRosterButton" class="draw-toggle" aria-live="polite">Draw Roster</button>
             <button type="button" id="clearButton">Reset</button>
           </div>
+          <p class="small" id="adminCountText">Entries: 0 / 16</p>
+          <ul class="players" id="adminPlayerList"></ul>
         </section>
 
         <section class="panel bracket-panel">
@@ -664,7 +747,6 @@
               <p class="roster-status" id="rosterStatus">Roster can be drawn once all 16 participants have signed up.</p>
             </div>
             <div class="bracket-controls">
-              <button type="button" id="drawRosterButton" class="draw-toggle" aria-live="polite">Draw Roster</button>
               <button type="button" id="focusToggle" class="focus-toggle" aria-pressed="false">Enlarge Bracket</button>
             </div>
           </div>
@@ -713,12 +795,25 @@
 
       const DEFAULT_EVENT_ID = 'swanston-table-tennis-tournament';
       const MAX_PLAYERS = 16;
+      const FILL_TEST_PLAYERS_ON_LOAD = true;
+      const ADMIN_SESSION_KEY = 'rk_tournament_admin_v1';
+      const ADMIN_PASSWORD = 'admin1234';
       const form = document.getElementById('signupForm');
       const nameInput = document.getElementById('name');
       const auraInput = document.getElementById('aura');
       const weakInput = document.getElementById('weak');
-      const countText = document.getElementById('countText');
+      const userPanel = document.getElementById('userPanel');
+      const adminPanel = document.getElementById('adminPanel');
+      const userTab = document.getElementById('userTab');
+      const adminTab = document.getElementById('adminTab');
+      const adminStatus = document.getElementById('adminStatus');
+      const adminCountText = document.getElementById('adminCountText');
+      const adminPlayerList = document.getElementById('adminPlayerList');
+      const adminActionGroup = document.getElementById('adminActionGroup');
+      const adminUnlockButton = document.getElementById('adminUnlockButton');
+      const adminLogoutButton = document.getElementById('adminLogoutButton');
       const listEl = document.getElementById('playerList');
+      const countText = document.getElementById('countText');
       const addButton = document.getElementById('addButton');
       const clearButton = document.getElementById('clearButton');
       const focusToggle = document.getElementById('focusToggle');
@@ -753,6 +848,9 @@
       let isRosterFinalized = false;
       let isShufflingRoster = false;
       let isBracketFocus = false;
+      let isAdminMode = false;
+      let currentView = 'user';
+      let isSwitchingViews = false;
       let firebaseRetryCount = 0;
       const FIREBASE_MAX_RETRIES = 3;
       const FIREBASE_RETRY_BASE_DELAY_MS = 3000;
@@ -860,6 +958,162 @@
         shareStatus.textContent = 'Unable to connect to Firebase. Retrying...';
       }
 
+      function makeTestPlayers() {
+        return Array.from({ length: MAX_PLAYERS }, (_, index) => ({
+          name: `Test Player ${index + 1}`,
+          aura: 'Test aura',
+          weak: 'Test weak',
+        }));
+      }
+
+      async function seedTestPlayersIfNeeded() {
+        if (!FILL_TEST_PLAYERS_ON_LOAD || players.length) {
+          return;
+        }
+
+        if (!isFirebaseAvailable || !participantsRef) {
+          players.length = 0;
+          players.push(...makeTestPlayers());
+          rosterOrder = [];
+          isRosterFinalized = false;
+          persistLocalEventState();
+          renderPlayerList();
+          renderBracket();
+          return;
+        }
+
+        try {
+          const snapshot = await get(participantsRef);
+          if (snapshot.exists()) {
+            return;
+          }
+
+          const seededPlayers = makeTestPlayers();
+          await Promise.all(
+            seededPlayers.map((player) =>
+              set(push(participantsRef), {
+                ...player,
+                createdAt: serverTimestamp(),
+              }),
+            ),
+          );
+        } catch (error) {
+          console.error('[RK Events] Failed to seed test players:', error);
+          shareStatus.textContent = 'Unable to seed test players. Using local placeholders instead.';
+          players.length = 0;
+          players.push(...makeTestPlayers());
+          persistLocalEventState();
+          renderPlayerList();
+          renderBracket();
+        }
+      }
+
+      function isAdmin() {
+        return isAdminMode;
+      }
+
+      function setAdminMode(enabled) {
+        isAdminMode = Boolean(enabled);
+        if (isAdminMode) {
+          sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+          adminStatus.textContent = '관리자 로그인이 확인되었습니다.';
+        } else {
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
+          adminStatus.textContent = '관리자 로그인이 필요합니다.';
+        }
+        adminUnlockButton.classList.toggle('hidden', isAdminMode);
+        adminLogoutButton.classList.toggle('hidden', !isAdminMode);
+        adminActionGroup.classList.toggle('hidden', !canUseAdminControls());
+        renderPlayerList();
+      }
+
+      function requireAdminGate() {
+        if (isAdmin()) {
+          return true;
+        }
+
+        const input = window.prompt('관리자 비밀번호를 입력하세요.');
+        if (!input) {
+          return false;
+        }
+
+        if (input.trim() === ADMIN_PASSWORD) {
+          setAdminMode(true);
+          return true;
+        }
+
+        shareStatus.textContent = '관리자 비밀번호가 일치하지 않습니다.';
+        return false;
+      }
+
+      function canUseAdminControls() {
+        return isAdmin() && currentView === 'admin';
+      }
+
+      function switchView(nextView) {
+        if (isSwitchingViews) {
+          return;
+        }
+
+        if (nextView === 'admin' && !isAdmin() && !requireAdminGate()) {
+          currentView = 'user';
+          userTab.classList.add('active');
+          userTab.setAttribute('aria-pressed', 'true');
+          adminTab.classList.remove('active');
+          adminTab.setAttribute('aria-pressed', 'false');
+          userPanel.classList.remove('hidden');
+          adminPanel.classList.add('hidden');
+          return;
+        }
+
+        isSwitchingViews = true;
+        currentView = nextView;
+
+        if (currentView === 'admin') {
+          userPanel.classList.add('hidden');
+          adminPanel.classList.remove('hidden');
+          userTab.classList.remove('active');
+          userTab.setAttribute('aria-pressed', 'false');
+          adminTab.classList.add('active');
+          adminTab.setAttribute('aria-pressed', 'true');
+        } else {
+          userPanel.classList.remove('hidden');
+          adminPanel.classList.add('hidden');
+          userTab.classList.add('active');
+          userTab.setAttribute('aria-pressed', 'true');
+          adminTab.classList.remove('active');
+          adminTab.setAttribute('aria-pressed', 'false');
+        }
+
+        adminUnlockButton.classList.toggle('hidden', isAdmin());
+        adminLogoutButton.classList.toggle('hidden', !isAdmin());
+        adminActionGroup.classList.toggle('hidden', !canUseAdminControls());
+        renderPlayerList();
+        isSwitchingViews = false;
+      }
+
+      function makePlayerListItem(player, index, options = {}) {
+        const item = document.createElement('li');
+        const row = document.createElement('div');
+        row.className = 'player-row';
+
+        const text = document.createElement('span');
+        text.textContent = `${index + 1}. ${player.name} (Aura: ${player.aura}, Weak: ${player.weak})`;
+        row.appendChild(text);
+
+        if (options.showDeleteButton) {
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'admin-delete';
+          deleteButton.textContent = '삭제';
+          deleteButton.dataset.playerIndex = String(index);
+          row.appendChild(deleteButton);
+        }
+
+        item.appendChild(row);
+        return item;
+      }
+
       async function retryFirebaseConnection() {
         if (firebaseRetryCount >= FIREBASE_MAX_RETRIES) {
           console.warn(`[RK Events] Firebase retry limit reached (${FIREBASE_MAX_RETRIES}).`);
@@ -961,12 +1215,19 @@
 
       function renderPlayerList() {
         listEl.innerHTML = '';
+        adminPlayerList.innerHTML = '';
+
         players.forEach((p, index) => {
-          const item = document.createElement('li');
-          item.textContent = `${index + 1}. ${p.name} (Aura: ${p.aura}, Weak: ${p.weak})`;
-          listEl.appendChild(item);
+          listEl.appendChild(makePlayerListItem(p, index, {}));
+          adminPlayerList.appendChild(
+            makePlayerListItem(p, index, {
+              showDeleteButton: isAdmin(),
+            }),
+          );
         });
+
         countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
+        adminCountText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
         if (players.length >= MAX_PLAYERS) {
           addButton.disabled = true;
           countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (closed)`;
@@ -978,7 +1239,15 @@
           addButton.disabled = true;
         }
 
-        if (isRosterFinalized) {
+        const canControlRoster = canUseAdminControls();
+        if (clearButton) {
+          clearButton.disabled = !canControlRoster;
+        }
+
+        if (!canControlRoster) {
+          drawRosterButton.disabled = true;
+          drawRosterButton.textContent = 'Draw Roster';
+        } else if (isRosterFinalized) {
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Roster Locked';
           bracketPanel.classList.add('is-drawn');
@@ -1011,6 +1280,10 @@
       }
 
       async function applyRosterDecision() {
+        if (!canUseAdminControls()) {
+          return;
+        }
+
         if (isRosterFinalized || isShufflingRoster || players.length < MAX_PLAYERS) {
           return;
         }
@@ -1248,7 +1521,45 @@
         }
       }
 
+      async function deleteParticipant(playerIndex) {
+        if (!canUseAdminControls()) {
+          return;
+        }
+
+        if (isRosterFinalized) {
+          shareStatus.textContent = 'Delete is disabled while roster is locked. Reset first.';
+          return;
+        }
+
+        const index = Number(playerIndex);
+        if (!Number.isInteger(index) || index < 0 || index >= players.length) {
+          return;
+        }
+
+        const player = players[index];
+
+        if (!isFirebaseAvailable || !participantsRef || !player?.id) {
+          players.splice(index, 1);
+          persistLocalEventState();
+          renderPlayerList();
+          renderBracket();
+          return;
+        }
+
+        try {
+          await remove(ref(participantsRef, player.id));
+          persistLocalEventState();
+        } catch (error) {
+          console.error(error);
+          shareStatus.textContent = 'Unable to delete participant. Please verify your Firebase permissions.';
+        }
+      }
+
       async function resetEventState() {
+        if (!canUseAdminControls()) {
+          return;
+        }
+
         if (!isFirebaseAvailable || !participantsRef || !eventRef) {
           players.length = 0;
           rosterOrder = [];
@@ -1303,11 +1614,30 @@
       function setEventListenersFromSnapshot() {
         form.addEventListener('submit', handleSubmit);
         clearButton.addEventListener('click', resetEventState);
+        adminPlayerList.addEventListener('click', async (event) => {
+          const deleteButton = event.target.closest('.admin-delete');
+          if (!deleteButton) {
+            return;
+          }
+          const playerIndex = deleteButton.dataset.playerIndex;
+          await deleteParticipant(playerIndex);
+        });
         focusToggle.addEventListener('click', () => {
           setBracketFocusMode(!isBracketFocus);
         });
         drawRosterButton.addEventListener('click', applyRosterDecision);
         shareButton.addEventListener('click', shareEvent);
+        userTab.addEventListener('click', () => switchView('user'));
+        adminTab.addEventListener('click', () => switchView('admin'));
+        adminUnlockButton.addEventListener('click', () => {
+          if (requireAdminGate()) {
+            switchView('admin');
+          }
+        });
+        adminLogoutButton.addEventListener('click', () => {
+          setAdminMode(false);
+          switchView('user');
+        });
       }
 
       function wireGlobalShortcuts() {
@@ -1383,6 +1713,8 @@
         console.log('[RK Events] Local state:', players.length, 'players, roster finalized:', isRosterFinalized);
         renderPlayerList();
         renderBracket();
+        setAdminMode(sessionStorage.getItem(ADMIN_SESSION_KEY) === '1');
+        switchView('user');
 
         if (!isFirebaseConfigured()) {
           console.warn('[RK Events] Firebase config has placeholder values.');
@@ -1409,6 +1741,7 @@
             });
           }
 
+          await seedTestPlayersIfNeeded();
           applyDatabaseSnapshots();
           console.log('[RK Events] Firebase connected. Real-time listeners active.');
           shareStatus.textContent = 'Live sync enabled. Share this page to collect registrations.';

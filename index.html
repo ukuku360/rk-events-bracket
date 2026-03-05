@@ -732,8 +732,8 @@
         <h1>Swanston Table Tennis Tournament</h1>
         <p class="subtitle">Single-elimination bracket (16 entrants). Player slots are displayed at the bottom and the champion position is connected upward.</p>
         <div class="mode-switch" role="tablist" aria-label="View mode">
-          <button type="button" id="userTab" class="mode-tab active" role="tab" aria-pressed="true" aria-controls="userPanel" data-view="user">참가자 화면</button>
-          <button type="button" id="adminTab" class="mode-tab" role="tab" aria-pressed="false" aria-controls="adminPanel" data-view="admin">관리자</button>
+          <button type="button" id="userTab" class="mode-tab active" role="tab" aria-pressed="true" aria-controls="userPanel" data-view="user">Participant View</button>
+          <button type="button" id="adminTab" class="mode-tab" role="tab" aria-pressed="false" aria-controls="adminPanel" data-view="admin">Admin</button>
         </div>
         <div class="hero-cta">
           <button type="button" id="shareButton">Share This Event</button>
@@ -775,10 +775,10 @@
 
         <section class="panel view-panel hidden" id="adminPanel" role="tabpanel" aria-labelledby="adminTab">
           <h2>Admin Dashboard</h2>
-          <p class="mode-admin-note" id="adminStatus">관리자 로그인이 필요합니다.</p>
+          <p class="mode-admin-note" id="adminStatus">Admin login is required.</p>
           <div class="actions">
-            <button type="button" id="adminUnlockButton">관리자 로그인</button>
-            <button type="button" id="adminLogoutButton" class="hidden">로그아웃</button>
+            <button type="button" id="adminUnlockButton">Admin Login</button>
+            <button type="button" id="adminLogoutButton" class="hidden">Log Out</button>
           </div>
           <div class="actions hidden" id="adminActionGroup">
             <button type="button" id="clearButton">Reset</button>
@@ -1062,10 +1062,10 @@
         isAdminMode = Boolean(enabled);
         if (isAdminMode) {
           sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
-          adminStatus.textContent = '관리자 로그인이 확인되었습니다.';
+          adminStatus.textContent = 'Admin login verified.';
         } else {
           sessionStorage.removeItem(ADMIN_SESSION_KEY);
-          adminStatus.textContent = '관리자 로그인이 필요합니다.';
+          adminStatus.textContent = 'Admin login is required.';
         }
         syncAdminControls();
         renderPlayerList();
@@ -1076,7 +1076,7 @@
           return true;
         }
 
-        const input = window.prompt('관리자 비밀번호를 입력하세요.');
+        const input = window.prompt('Enter the admin password.');
         if (!input) {
           return false;
         }
@@ -1086,7 +1086,7 @@
           return true;
         }
 
-        shareStatus.textContent = '관리자 비밀번호가 일치하지 않습니다.';
+        shareStatus.textContent = 'Incorrect admin password.';
         return false;
       }
 
@@ -1148,7 +1148,7 @@
           const deleteButton = document.createElement('button');
           deleteButton.type = 'button';
           deleteButton.className = 'admin-delete';
-          deleteButton.textContent = '삭제';
+          deleteButton.textContent = 'Delete';
           deleteButton.dataset.playerIndex = String(index);
           row.appendChild(deleteButton);
         }
@@ -1510,7 +1510,7 @@
           const entrants = getBracketEntrants();
           while (entrants.length < MAX_PLAYERS) entrants.push({ empty: true });
           const champPlayer = entrants[winnerEntrantIndex];
-          const champName = champPlayer && !champPlayer.empty ? champPlayer.name : '챔피언';
+          const champName = champPlayer && !champPlayer.empty ? champPlayer.name : 'Champion';
           triggerChampionCelebration(champName);
         } else {
           triggerWinnerConfetti(cx, cy);

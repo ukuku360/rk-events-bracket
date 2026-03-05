@@ -779,7 +779,6 @@
         push,
         ref,
         remove,
-        runTransaction,
         serverTimestamp,
         set,
         update,
@@ -1297,44 +1296,25 @@
         setRosterShuffleMode(true);
         const finalizedIds = shuffleList(players).map((player) => player.id || player);
 
-        if (!isFirebaseAvailable || !eventRef) {
-          rosterOrder = finalizedIds;
-          isRosterFinalized = true;
-          setTimeout(() => {
-            setRosterShuffleMode(false);
-            bracketPanel.classList.add('is-drawn');
+        setTimeout(async () => {
+          try {
+            rosterOrder = [...finalizedIds];
+            isRosterFinalized = true;
             renderBracket();
             renderPlayerList();
             persistLocalEventState();
-          }, 1600);
-          return;
-        }
 
-        setTimeout(async () => {
-          try {
-            await runTransaction(eventRef, (snapshot) => {
-              if (snapshot === null) {
-                return {
-                  title: 'Swanston Table Tennis Tournament',
-                  maxPlayers: MAX_PLAYERS,
-                  isRosterFinalized: true,
-                  rosterOrder: finalizedIds,
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp(),
-                };
-              }
-
-              return {
-                ...snapshot,
+            if (isFirebaseAvailable && eventRef) {
+              await update(eventRef, {
                 isRosterFinalized: true,
                 rosterOrder: finalizedIds,
+                maxPlayers: MAX_PLAYERS,
                 updatedAt: serverTimestamp(),
-              };
-            });
+              });
+            }
           } catch (error) {
             console.error(error);
             shareStatus.textContent = 'Failed to lock roster. Please try again.';
-            isRosterFinalized = false;
           } finally {
             setRosterShuffleMode(false);
           }

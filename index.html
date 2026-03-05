@@ -889,8 +889,6 @@
       let eventRef;
       let participantsRef;
       let isFirebaseAvailable = true;
-      let participantsUnsub;
-      let eventUnsub;
       let rosterOrder = [];
       let isRosterFinalized = false;
       let isShufflingRoster = false;
@@ -1069,9 +1067,7 @@
           sessionStorage.removeItem(ADMIN_SESSION_KEY);
           adminStatus.textContent = '관리자 로그인이 필요합니다.';
         }
-        adminUnlockButton.classList.toggle('hidden', isAdminMode);
-        adminLogoutButton.classList.toggle('hidden', !isAdminMode);
-        adminActionGroup.classList.toggle('hidden', !canUseAdminControls());
+        syncAdminControls();
         renderPlayerList();
       }
 
@@ -1102,44 +1098,39 @@
         return isAdmin();
       }
 
+      function applyTabState(tab, isActive) {
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-pressed', String(isActive));
+      }
+
+      function syncViewPanels() {
+        const showingAdmin = currentView === 'admin';
+        userPanel.classList.toggle('hidden', showingAdmin);
+        adminPanel.classList.toggle('hidden', !showingAdmin);
+        applyTabState(userTab, !showingAdmin);
+        applyTabState(adminTab, showingAdmin);
+      }
+
+      function syncAdminControls() {
+        const admin = isAdmin();
+        adminUnlockButton.classList.toggle('hidden', admin);
+        adminLogoutButton.classList.toggle('hidden', !admin);
+        adminActionGroup.classList.toggle('hidden', !canUseAdminControls());
+      }
+
       function switchView(nextView) {
         if (isSwitchingViews) {
           return;
         }
 
         if (nextView === 'admin' && !isAdmin() && !requireAdminGate()) {
-          currentView = 'user';
-          userTab.classList.add('active');
-          userTab.setAttribute('aria-pressed', 'true');
-          adminTab.classList.remove('active');
-          adminTab.setAttribute('aria-pressed', 'false');
-          userPanel.classList.remove('hidden');
-          adminPanel.classList.add('hidden');
-          return;
+          nextView = 'user';
         }
 
         isSwitchingViews = true;
         currentView = nextView;
-
-        if (currentView === 'admin') {
-          userPanel.classList.add('hidden');
-          adminPanel.classList.remove('hidden');
-          userTab.classList.remove('active');
-          userTab.setAttribute('aria-pressed', 'false');
-          adminTab.classList.add('active');
-          adminTab.setAttribute('aria-pressed', 'true');
-        } else {
-          userPanel.classList.remove('hidden');
-          adminPanel.classList.add('hidden');
-          userTab.classList.add('active');
-          userTab.setAttribute('aria-pressed', 'true');
-          adminTab.classList.remove('active');
-          adminTab.setAttribute('aria-pressed', 'false');
-        }
-
-        adminUnlockButton.classList.toggle('hidden', isAdmin());
-        adminLogoutButton.classList.toggle('hidden', !isAdmin());
-        adminActionGroup.classList.toggle('hidden', !canUseAdminControls());
+        syncViewPanels();
+        syncAdminControls();
         renderPlayerList();
         isSwitchingViews = false;
       }
@@ -1166,6 +1157,27 @@
         return item;
       }
 
+      function bindEventRefs() {
+        eventRef = ref(db, `events/${eventId}`);
+        participantsRef = ref(db, `events/${eventId}/participants`);
+      }
+
+      async function ensureEventDocument() {
+        const snapshot = await get(eventRef);
+        if (snapshot.exists()) {
+          return;
+        }
+
+        await set(eventRef, {
+          title: 'Swanston Table Tennis Tournament',
+          maxPlayers: MAX_PLAYERS,
+          isRosterFinalized: false,
+          rosterOrder: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       async function retryFirebaseConnection() {
         if (firebaseRetryCount >= FIREBASE_MAX_RETRIES) {
           console.warn(`[RK Events] Firebase retry limit reached (${FIREBASE_MAX_RETRIES}).`);
@@ -1184,19 +1196,8 @@
             app = initializeApp(FIREBASE_CONFIG);
             db = getDatabase(app);
           }
-          eventRef = ref(db, `events/${eventId}`);
-          participantsRef = ref(db, `events/${eventId}/participants`);
-          const snapshot = await get(eventRef);
-          if (!snapshot.exists()) {
-            await set(eventRef, {
-              title: 'Swanston Table Tennis Tournament',
-              maxPlayers: MAX_PLAYERS,
-              isRosterFinalized: false,
-              rosterOrder: [],
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            });
-          }
+          bindEventRefs();
+          await ensureEventDocument();
 
           isFirebaseAvailable = true;
           firebaseRetryCount = 0;
@@ -1278,7 +1279,7 @@
           listEl.appendChild(makePlayerListItem(p, index, {}));
           adminPlayerList.appendChild(
             makePlayerListItem(p, index, {
-              showDeleteButton: isAdmin(),
+              showDeleteButton: canUseAdminControls(),
             }),
           );
         });
@@ -1820,10 +1821,13 @@
         await addParticipantToDatabase(player);
       }
 
-      function setEventListenersFromSnapshot() {
+      function wireUiEventListeners() {
         form.addEventListener('submit', handleSubmit);
         clearButton.addEventListener('click', resetEventState);
         adminPlayerList.addEventListener('click', async (event) => {
+          if (!canUseAdminControls()) {
+            return;
+          }
           const deleteButton = event.target.closest('.admin-delete');
           if (!deleteButton) {
             return;
@@ -1862,7 +1866,7 @@
           return;
         }
 
-        participantsUnsub = onValue(
+        onValue(
           query(participantsRef, orderByChild('createdAt')),
           (snapshot) => {
             players.length = 0;
@@ -1885,7 +1889,7 @@
           },
         );
 
-        eventUnsub = onValue(
+        onValue(
           eventRef,
           (snapshot) => {
             if (!snapshot.exists()) {
@@ -2087,19 +2091,8 @@
         try {
           app = initializeApp(FIREBASE_CONFIG);
           db = getDatabase(app);
-          eventRef = ref(db, `events/${eventId}`);
-          participantsRef = ref(db, `events/${eventId}/participants`);
-          const snapshot = await get(eventRef);
-          if (!snapshot.exists()) {
-            await set(eventRef, {
-              title: 'Swanston Table Tennis Tournament',
-              maxPlayers: MAX_PLAYERS,
-              isRosterFinalized: false,
-              rosterOrder: [],
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            });
-          }
+          bindEventRefs();
+          await ensureEventDocument();
 
           await seedTestPlayersIfNeeded();
           applyDatabaseSnapshots();
@@ -2117,7 +2110,7 @@
       }
 
       initializeProject();
-      setEventListenersFromSnapshot();
+      wireUiEventListeners();
       setBracketFocusMode(document.body.classList.contains('bracket-focus'));
       wireGlobalShortcuts();
     </script>

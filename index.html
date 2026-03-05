@@ -1326,6 +1326,25 @@
         return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
       }
 
+      function shortenPlayerName(value, maxLength) {
+        if (!value || value.length <= maxLength) {
+          return value || '';
+        }
+
+        const trailingNumber = value.match(/(\d+)$/);
+        if (!trailingNumber) {
+          return shortenText(value, maxLength);
+        }
+
+        const suffix = trailingNumber[1];
+        const headLength = maxLength - suffix.length - 1;
+        if (headLength <= 1) {
+          return shortenText(value, maxLength);
+        }
+
+        return `${value.slice(0, headLength)}…${suffix}`;
+      }
+
       function makeNode(x, y, textPrimary, textMeta, isLeaf, isEmpty) {
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
@@ -1427,7 +1446,7 @@
         levelNodes[0] = entrants.slice(0, 16).map((p, idx) => ({
           x: X_PADDING + slotSpacing * idx,
           y: yBottom,
-          name: p.empty ? 'Empty slot' : `${idx + 1}. ${shortenText(p.name, 12)}`,
+          name: p.empty ? 'Empty slot' : `${idx + 1}. ${shortenPlayerName(p.name, 12)}`,
           aura: p.aura,
           weak: p.weak,
           isEmpty: !!p.empty,

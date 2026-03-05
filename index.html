@@ -681,7 +681,34 @@
       </div>
     </main>
 
-    <script>
+    <script type="module">
+      import {
+        addDoc,
+        collection,
+        doc,
+        getFirestore,
+        getDoc,
+        getDocs,
+        onSnapshot,
+        orderBy,
+        query,
+        runTransaction,
+        serverTimestamp,
+        setDoc,
+        writeBatch,
+      } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+
+      const FIREBASE_CONFIG = {
+        apiKey: 'YOUR_FIREBASE_API_KEY',
+        authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
+        projectId: 'YOUR_FIREBASE_PROJECT_ID',
+        storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+        messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
+        appId: 'YOUR_FIREBASE_APP_ID',
+      };
+
+      const DEFAULT_EVENT_ID = 'swanston-table-tennis-tournament';
       const MAX_PLAYERS = 16;
       const form = document.getElementById('signupForm');
       const nameInput = document.getElementById('name');
@@ -711,6 +738,14 @@
       const BOTTOM_PADDING = 48;
 
       const players = [];
+      let app;
+      let db;
+      let eventId = '';
+      let eventRef;
+      let participantsRef;
+      let isFirebaseAvailable = true;
+      let participantsUnsub;
+      let eventUnsub;
       let rosterOrder = [];
       let isRosterFinalized = false;
       let isShufflingRoster = false;
@@ -725,8 +760,35 @@
         return true;
       }
 
+      function getOrCreateEventId() {
+        const params = new URLSearchParams(window.location.search);
+        const queryEventId = params.get('event');
+
+        if (queryEventId?.trim()) {
+          return queryEventId.trim();
+        }
+
+        const savedEventId = localStorage.getItem('rk_tournament_event_id');
+        if (savedEventId) {
+          return savedEventId;
+        }
+
+        const generated = `${DEFAULT_EVENT_ID}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36)}`;
+        localStorage.setItem('rk_tournament_event_id', generated);
+        return generated;
+      }
+
+      function normalizeEventUrl() {
+        const next = new URL(window.location.href);
+        if (!next.searchParams.get('event') || next.searchParams.get('event') !== eventId) {
+          next.searchParams.set('event', eventId);
+          window.history.replaceState({}, '', next);
+        }
+        return next.toString();
+      }
+
       async function shareEvent() {
-        const eventUrl = window.location.href;
+        const eventUrl = normalizeEventUrl();
         const shareData = {
           title: 'Swanston Table Tennis Tournament',
           text: 'Reserve your spot for the 16-player knockout bracket at Roomingkos Swanston.',
@@ -760,11 +822,31 @@
         }
       }
 
+      function isFirebaseConfigured() {
+        return Object.values(FIREBASE_CONFIG).every((value) => {
+          if (!value || !value.trim()) return false;
+          return !value.startsWith('YOUR_FIREBASE_');
+        });
+      }
+
+      function shuffleList(values) {
+        const next = [...values];
+        for (let i = next.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [next[i], next[j]] = [next[j], next[i]];
+        }
+        return next;
+      }
+
       function setBracketFocusMode(enabled) {
         isBracketFocus = enabled;
         document.body.classList.toggle('bracket-focus', enabled);
         focusToggle.textContent = enabled ? 'Back to normal view' : 'Enlarge Bracket';
         focusToggle.setAttribute('aria-pressed', String(enabled));
+      }
+
+      function setFirebaseModeNotice() {
+        shareStatus.textContent = 'Firebase is not configured. Please set your Firebase credentials to sync across devices.';
       }
 
       function renderPlayerList() {
@@ -789,6 +871,7 @@
         if (isRosterFinalized) {
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Roster Locked';
+          bracketPanel.classList.add('is-drawn');
         } else if (isShufflingRoster) {
           drawRosterButton.disabled = true;
           drawRosterButton.textContent = 'Drawing...';
@@ -799,6 +882,8 @@
 
         if (isShufflingRoster) {
           rosterStatus.textContent = 'Drawing roster now. The final matchups will be set shortly.';
+        } else if (!isFirebaseAvailable) {
+          rosterStatus.textContent = 'Running in local mode. Configure Firebase to sync this bracket across devices.';
         } else if (isRosterFinalized) {
           rosterStatus.textContent = 'Roster is locked. The bracket will not change unless reset.';
         } else if (players.length < MAX_PLAYERS) {
@@ -808,15 +893,6 @@
         }
       }
 
-      function shuffleList(values) {
-        const next = [...values];
-        for (let i = next.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [next[i], next[j]] = [next[j], next[i]];
-        }
-        return next;
-      }
-
       function setRosterShuffleMode(enabled) {
         isShufflingRoster = enabled;
         bracketPanel.classList.toggle('is-shuffling', enabled);
@@ -824,21 +900,62 @@
         renderPlayerList();
       }
 
-      function applyRosterDecision() {
+      async function applyRosterDecision() {
         if (isRosterFinalized || isShufflingRoster || players.length < MAX_PLAYERS) {
           return;
         }
 
         setRosterShuffleMode(true);
-        const finalized = shuffleList(players);
+        const finalizedIds = shuffleList(players).map((player) => player.id || player);
 
-        setTimeout(() => {
-          rosterOrder = finalized;
-          isRosterFinalized = true;
-          setRosterShuffleMode(false);
-          bracketPanel.classList.add('is-drawn');
-          renderBracket();
-          renderPlayerList();
+        if (!isFirebaseAvailable || !eventRef) {
+          rosterOrder = finalizedIds;
+          setTimeout(() => {
+            isRosterFinalized = true;
+            setRosterShuffleMode(false);
+            bracketPanel.classList.add('is-drawn');
+            renderBracket();
+            renderPlayerList();
+          }, 1600);
+          return;
+        }
+
+        setTimeout(async () => {
+          try {
+            await runTransaction(db, async (transaction) => {
+              const snapshot = await transaction.get(eventRef);
+              if (!snapshot.exists()) {
+                transaction.set(eventRef, {
+                  maxPlayers: MAX_PLAYERS,
+                  isRosterFinalized: false,
+                  rosterOrder: [],
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
+                });
+                return;
+              }
+
+              if (snapshot.data()?.isRosterFinalized) {
+                return;
+              }
+
+              transaction.set(
+                eventRef,
+                {
+                  isRosterFinalized: true,
+                  rosterOrder: finalizedIds,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true },
+              );
+            });
+          } catch (error) {
+            console.error(error);
+            shareStatus.textContent = 'Failed to lock roster. Please try again.';
+            isRosterFinalized = false;
+          } finally {
+            setRosterShuffleMode(false);
+          }
         }, 1600);
       }
 
@@ -891,11 +1008,36 @@
         edgesLayer.appendChild(path);
       }
 
+      function getBracketEntrants() {
+        if (!isRosterFinalized || !rosterOrder.length) {
+          return [...players];
+        }
+
+        const byId = new Map(players.map((player) => [player.id, player]));
+        const first = rosterOrder;
+        const ordered = [];
+
+        if (typeof first[0] === 'string') {
+          for (const id of first) {
+            const player = byId.get(id);
+            if (player) {
+              ordered.push(player);
+            }
+          }
+        } else {
+          for (const player of first) {
+            ordered.push(player);
+          }
+        }
+
+        return ordered;
+      }
+
       function renderBracket() {
         nodesLayer.innerHTML = '';
         edgesLayer.innerHTML = '';
 
-        const sourcePlayers = isRosterFinalized ? rosterOrder : players;
+        const sourcePlayers = getBracketEntrants();
         const entrants = [...sourcePlayers];
         while (entrants.length < MAX_PLAYERS) {
           entrants.push({
@@ -982,45 +1124,202 @@
         });
       }
 
-      form.addEventListener('submit', (event) => {
+      function initializeEmptyEntriesFallback() {
+        renderPlayerList();
+        renderBracket();
+      }
+
+      async function addParticipantToFirestore(player) {
+        try {
+          await addDoc(participantsRef, {
+            ...player,
+            createdAt: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error(error);
+          shareStatus.textContent = 'Unable to save participant. Please verify your Firebase permissions.';
+        }
+      }
+
+      async function resetEventState() {
+        if (!isFirebaseAvailable || !participantsRef || !eventRef) {
+          players.length = 0;
+          rosterOrder = [];
+          isRosterFinalized = false;
+          setRosterShuffleMode(false);
+          bracketPanel.classList.remove('is-drawn');
+          renderPlayerList();
+          renderBracket();
+          return;
+        }
+
+        try {
+          const snapshot = await getDocs(participantsRef);
+          const batch = writeBatch(db);
+
+          snapshot.forEach((docItem) => {
+            batch.delete(docItem.ref);
+          });
+
+          batch.set(
+            eventRef,
+            {
+              rosterOrder: [],
+              isRosterFinalized: false,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          await batch.commit();
+        } catch (error) {
+          console.error(error);
+          shareStatus.textContent = 'Failed to reset tournament data.';
+        }
+      }
+
+      async function handleSubmit(event) {
         event.preventDefault();
-        if (players.length >= MAX_PLAYERS) return;
-        players.push({
+        if (players.length >= MAX_PLAYERS || isShufflingRoster || isRosterFinalized) {
+          return;
+        }
+
+        const player = {
           name: nameInput.value.trim(),
           aura: auraInput.value.trim(),
           weak: weakInput.value.trim(),
-        });
+        };
+
         form.reset();
-        renderPlayerList();
-        renderBracket();
-      });
 
-      clearButton.addEventListener('click', () => {
-        players.length = 0;
-        rosterOrder = [];
-        isRosterFinalized = false;
-        setRosterShuffleMode(false);
-        bracketPanel.classList.remove('is-drawn');
-        renderPlayerList();
-        renderBracket();
-      });
-
-      focusToggle.addEventListener('click', () => {
-        setBracketFocusMode(!isBracketFocus);
-      });
-
-      drawRosterButton.addEventListener('click', applyRosterDecision);
-      shareButton.addEventListener('click', shareEvent);
-
-      window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && isBracketFocus) {
-          setBracketFocusMode(false);
+        if (!isFirebaseAvailable || !participantsRef) {
+          players.push(player);
+          renderPlayerList();
+          renderBracket();
+          return;
         }
-      });
 
+        await addParticipantToFirestore(player);
+      }
+
+      function setEventListenersFromSnapshot() {
+        form.addEventListener('submit', handleSubmit);
+        clearButton.addEventListener('click', resetEventState);
+        focusToggle.addEventListener('click', () => {
+          setBracketFocusMode(!isBracketFocus);
+        });
+        drawRosterButton.addEventListener('click', applyRosterDecision);
+        shareButton.addEventListener('click', shareEvent);
+      }
+
+      function wireGlobalShortcuts() {
+        window.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && isBracketFocus) {
+            setBracketFocusMode(false);
+          }
+        });
+      }
+
+      function applyFirestoreSnapshots() {
+        if (!db) {
+          return;
+        }
+
+        participantsUnsub = onSnapshot(
+          query(participantsRef, orderBy('createdAt', 'asc')),
+          (snapshot) => {
+            players.length = 0;
+            snapshot.forEach((docItem) => {
+              players.push({
+                id: docItem.id,
+                ...docItem.data(),
+              });
+            });
+
+            renderPlayerList();
+            renderBracket();
+          },
+          (error) => {
+            console.error(error);
+            shareStatus.textContent = 'Realtime sync error. Refreshing list from local input.';
+            isFirebaseAvailable = false;
+            initializeEmptyEntriesFallback();
+          },
+        );
+
+        eventUnsub = onSnapshot(
+          eventRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              return;
+            }
+
+            const data = snapshot.data();
+            rosterOrder = Array.isArray(data?.rosterOrder) ? data.rosterOrder : [];
+            isRosterFinalized = Boolean(data?.isRosterFinalized);
+
+            if (isRosterFinalized) {
+              bracketPanel.classList.add('is-drawn');
+            } else {
+              bracketPanel.classList.remove('is-drawn');
+            }
+
+            renderPlayerList();
+            renderBracket();
+          },
+          (error) => {
+            console.error(error);
+            isFirebaseAvailable = false;
+            shareStatus.textContent = 'Failed to sync bracket state.';
+            initializeEmptyEntriesFallback();
+          },
+        );
+      }
+
+      async function initializeProject() {
+        eventId = getOrCreateEventId();
+        normalizeEventUrl();
+
+        if (!isFirebaseConfigured()) {
+          isFirebaseAvailable = false;
+          setFirebaseModeNotice();
+          initializeEmptyEntriesFallback();
+          return;
+        }
+
+        try {
+          app = initializeApp(FIREBASE_CONFIG);
+          db = getFirestore(app);
+          eventRef = doc(db, 'events', eventId);
+          participantsRef = collection(eventRef, 'participants');
+          await getDoc(eventRef).then(async (snapshot) => {
+            if (!snapshot.exists()) {
+              await setDoc(eventRef, {
+                title: 'Swanston Table Tennis Tournament',
+                maxPlayers: MAX_PLAYERS,
+                isRosterFinalized: false,
+                rosterOrder: [],
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              });
+            }
+          });
+          applyFirestoreSnapshots();
+          shareStatus.textContent = 'Live sync enabled. Share this page to collect registrations.';
+          renderPlayerList();
+          renderBracket();
+        } catch (error) {
+          console.error(error);
+          isFirebaseAvailable = false;
+          setFirebaseModeNotice();
+          initializeEmptyEntriesFallback();
+        }
+      }
+
+      initializeProject();
+      setEventListenersFromSnapshot();
       setBracketFocusMode(document.body.classList.contains('bracket-focus'));
-      renderPlayerList();
-      renderBracket();
+      wireGlobalShortcuts();
     </script>
   </body>
 </html>

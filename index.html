@@ -333,7 +333,7 @@
       }
 
       .spectator-head {
-        margin-bottom: 16px;
+        margin-bottom: 22px;
       }
 
       .spectator-eyebrow {
@@ -365,21 +365,23 @@
         font-size: 14px;
         font-weight: 800;
         line-height: 1.4;
+        max-width: 28ch;
       }
 
       .spectator-form {
         display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
-        align-items: end;
-        gap: 16px 18px;
+        grid-template-columns: 1fr;
+        gap: 18px;
       }
 
       .spectator-form label {
         min-width: 0;
+        gap: 10px;
       }
 
       .spectator-form label span {
         display: block;
+        font-size: 15px;
         line-height: 1.1;
       }
 
@@ -390,8 +392,8 @@
       }
 
       .spectator-form button {
-        grid-column: 1 / -1;
         width: 100%;
+        margin-top: 2px;
       }
 
       #spectatorVoteButton {
@@ -400,9 +402,9 @@
       }
 
       .spectator-count {
-        margin-top: 18px;
+        margin-top: 24px;
         border-top: 3px dashed var(--black);
-        padding-top: 14px;
+        padding-top: 18px;
         font-size: 14px;
         font-weight: 900;
         text-transform: uppercase;
@@ -1054,16 +1056,6 @@
 
         .entries-panel .players {
           max-height: 360px;
-        }
-      }
-
-      @media (max-width: 960px) {
-        .spectator-form {
-          grid-template-columns: 1fr;
-        }
-
-        .spectator-form button {
-          grid-column: auto;
         }
       }
 

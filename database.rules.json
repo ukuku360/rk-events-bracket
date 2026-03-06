@@ -6,6 +6,9 @@
         ".write": true,
         "participants": {
           ".indexOn": ["createdAt"]
+        },
+        "waitlist": {
+          ".indexOn": ["createdAt"]
         }
       }
     }

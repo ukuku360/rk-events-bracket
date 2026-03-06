@@ -347,6 +347,13 @@
         transform: translateX(4px);
       }
 
+      .players li.placeholder {
+        padding: 12px 14px;
+        background: #f4f4f4;
+        color: #666;
+        box-shadow: 3px 3px 0px #999;
+      }
+
       .player-row {
         display: flex;
         align-items: center;
@@ -819,6 +826,13 @@
         min-width: 0;
       }
 
+      .entries-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
       .entries-count {
         margin: 0;
         display: inline-flex;
@@ -839,6 +853,43 @@
         flex: 1 1 auto;
         min-height: 0;
         max-height: none;
+      }
+
+      .waitlist-section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 3px dashed var(--black);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+        flex: 0 0 clamp(120px, 28%, 180px);
+      }
+
+      .waitlist-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .waitlist-count {
+        background: var(--brand-alt);
+      }
+
+      .waitlist-note {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .waitlist-players {
+        margin-top: 0 !important;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .warriors-layout .registration-panel,
@@ -1530,8 +1581,17 @@
 
             <section class="panel user-card entries-panel" id="entriesPanel" aria-labelledby="entriesTitle">
             <h2 id="entriesTitle">Entries</h2>
-            <p class="entries-count" id="countText">Entries: 0 / 16</p>
-            <ul class="players" id="playerList"></ul>
+            <div class="entries-content">
+              <p class="entries-count" id="countText">Entries: 0 / 16</p>
+              <ul class="players" id="playerList"></ul>
+              <section class="waitlist-section hidden" id="waitlistSection" aria-labelledby="waitlistCountText">
+                <div class="waitlist-head">
+                  <p class="entries-count waitlist-count" id="waitlistCountText">Waitlist: 0</p>
+                  <p class="waitlist-note">Late signups queue here.</p>
+                </div>
+                <ul class="players waitlist-players" id="waitlistPlayerList"></ul>
+              </section>
+            </div>
             </section>
           </div>
         </div>
@@ -1651,6 +1711,9 @@
       const adminUnlockButton = document.getElementById('adminUnlockButton');
       const adminLogoutButton = document.getElementById('adminLogoutButton');
       const listEl = document.getElementById('playerList');
+      const waitlistSection = document.getElementById('waitlistSection');
+      const waitlistCountText = document.getElementById('waitlistCountText');
+      const waitlistListEl = document.getElementById('waitlistPlayerList');
       const countText = document.getElementById('countText');
       const addButton = document.getElementById('addButton');
       const clearButton = document.getElementById('clearButton');
@@ -1689,12 +1752,14 @@
       const BOTTOM_PADDING = 48;
 
       const players = [];
+      const waitingPlayers = [];
       const spectatorVotes = [];
       let app;
       let db;
       let eventId = '';
       let eventRef;
       let participantsRef;
+      let waitlistRef;
       let spectatorVotesRef;
       let isFirebaseAvailable = true;
       let rosterOrder = [];
@@ -1863,13 +1928,22 @@
         }));
       }
 
+      function isRosterFull() {
+        return players.length >= MAX_PLAYERS;
+      }
+
+      function shouldShowWaitlist() {
+        return currentView === 'warriors' || currentView === 'admin';
+      }
+
       async function seedTestPlayersIfNeeded() {
-        if (!FILL_TEST_PLAYERS_ON_LOAD || players.length) {
+        if (!FILL_TEST_PLAYERS_ON_LOAD || players.length || waitingPlayers.length) {
           return;
         }
 
         if (!isFirebaseAvailable || !participantsRef) {
           players.length = 0;
+          waitingPlayers.length = 0;
           players.push(...makeTestPlayers());
           rosterOrder = [];
           isRosterFinalized = false;
@@ -1880,8 +1954,11 @@
         }
 
         try {
-          const snapshot = await get(participantsRef);
-          if (snapshot.exists()) {
+          const [participantsSnapshot, waitlistSnapshot] = await Promise.all([
+            get(participantsRef),
+            waitlistRef ? get(waitlistRef) : Promise.resolve(null),
+          ]);
+          if (participantsSnapshot.exists() || waitlistSnapshot?.exists()) {
             return;
           }
 
@@ -2018,6 +2095,10 @@
       }
 
       function makePlayerListItem(player, index, options = {}) {
+        const {
+          showDeleteButton = false,
+          listType = 'entries',
+        } = options;
         const item = document.createElement('li');
         const row = document.createElement('div');
         row.className = 'player-row';
@@ -2026,12 +2107,13 @@
         text.textContent = player.name;
         row.appendChild(text);
 
-        if (options.showDeleteButton) {
+        if (showDeleteButton) {
           const deleteButton = document.createElement('button');
           deleteButton.type = 'button';
           deleteButton.className = 'admin-delete';
           deleteButton.textContent = 'Delete';
           deleteButton.dataset.playerIndex = String(index);
+          deleteButton.dataset.playerList = listType;
           row.appendChild(deleteButton);
         }
 
@@ -2537,6 +2619,7 @@
       function bindEventRefs() {
         eventRef = ref(db, `events/${eventId}`);
         participantsRef = ref(db, `events/${eventId}/participants`);
+        waitlistRef = ref(db, `events/${eventId}/waitlist`);
         spectatorVotesRef = ref(db, `events/${eventId}/spectatorVotes`);
       }
 
@@ -2611,6 +2694,11 @@
             state.players.forEach((player) => players.push(player));
           }
 
+          if (Array.isArray(state.waitingPlayers)) {
+            waitingPlayers.length = 0;
+            state.waitingPlayers.forEach((player) => waitingPlayers.push(player));
+          }
+
           if (Array.isArray(state.rosterOrder)) {
             rosterOrder = state.rosterOrder;
           }
@@ -2639,6 +2727,7 @@
 
         const state = {
           players,
+          waitingPlayers,
           spectatorVotes,
           rosterOrder,
           isRosterFinalized,
@@ -2655,28 +2744,48 @@
         localStorage.removeItem(`${EVENT_STATE_STORAGE_PREFIX}${eventId}`);
       }
 
+      function renderWaitlist() {
+        const showWaitlist = shouldShowWaitlist() && waitingPlayers.length > 0;
+        waitlistSection.classList.toggle('hidden', !showWaitlist);
+        waitlistListEl.innerHTML = '';
+        waitlistCountText.textContent = `Waitlist: ${waitingPlayers.length}`;
+
+        if (!showWaitlist) {
+          return;
+        }
+
+        waitingPlayers.forEach((player, index) => {
+          waitlistListEl.appendChild(
+            makePlayerListItem(player, index, {
+              showDeleteButton: canUseAdminControls(),
+              listType: 'waitlist',
+            }),
+          );
+        });
+      }
+
       function renderPlayerList() {
         listEl.innerHTML = '';
 
-        players.forEach((p, index) => {
+        players.forEach((player, index) => {
           listEl.appendChild(
-            makePlayerListItem(p, index, {
+            makePlayerListItem(player, index, {
               showDeleteButton: canUseAdminControls(),
+              listType: 'entries',
             }),
           );
         });
 
+        const entriesFull = isRosterFull();
+        const waitlistCount = waitingPlayers.length;
+
         countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
-        if (players.length >= MAX_PLAYERS) {
-          addButton.disabled = true;
-          countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (closed)`;
-        } else {
-          addButton.disabled = false;
+        if (entriesFull) {
+          countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (full)`;
         }
 
-        if (isShufflingRoster) {
-          addButton.disabled = true;
-        }
+        addButton.disabled = isShufflingRoster || isRosterFinalized;
+        addButton.textContent = entriesFull ? 'Join Waitlist' : 'Add Participant';
 
         const canControlRoster = canUseRosterControls();
         if (clearButton) {
@@ -2694,6 +2803,7 @@
           drawRosterButton.textContent = 'Draw Roster';
         }
 
+        renderWaitlist();
         bracketPanel.classList.toggle('is-drawn', isRosterFinalized);
 
         if (isShufflingRoster) {
@@ -2702,12 +2812,16 @@
           rosterStatus.textContent = 'At least 2 participants are needed to draw a roster.';
         } else if (players.length < MAX_PLAYERS) {
           rosterStatus.textContent = `${players.length} of ${MAX_PLAYERS} slots filled. You can draw now or wait for more participants.`;
+        } else if (isRosterFinalized) {
+          rosterStatus.textContent = waitlistCount
+            ? `Roster is active. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} remain on the waitlist.`
+            : 'Roster is active. Click "Draw Roster" again to reshuffle.';
+        } else if (waitlistCount) {
+          rosterStatus.textContent = `All ${MAX_PLAYERS} slots are filled. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'is' : 'are'} waiting for an opening.`;
         } else if (!isFirebaseAvailable) {
           rosterStatus.textContent = 'Running in local mode. Configure Firebase to sync this bracket across devices.';
-        } else if (isRosterFinalized) {
-          rosterStatus.textContent = 'Roster is active. Click "Draw Roster" again to reshuffle.';
         } else {
-          rosterStatus.textContent = 'All participants are in. Click "Draw Roster" to shuffle bracket.';
+          rosterStatus.textContent = 'All participants are in. New signups now go to the waitlist.';
         }
 
         queueEntriesPanelHeightSync();
@@ -3531,15 +3645,34 @@
         renderBracket();
       }
 
-      async function addParticipantToDatabase(player) {
+      async function addParticipantToDatabase(player, targetList = 'participants') {
+        const targetRef = targetList === 'waitlist' ? waitlistRef : participantsRef;
+        if (!targetRef) {
+          return;
+        }
+
         try {
-          await set(push(participantsRef), {
+          await set(push(targetRef), {
             ...player,
             createdAt: serverTimestamp(),
           });
         } catch (error) {
           console.error(error);
           shareStatus.textContent = 'Unable to save participant. Please verify your Firebase permissions.';
+        }
+      }
+
+      async function shouldQueueParticipantRemotely() {
+        if (!participantsRef) {
+          return isRosterFull();
+        }
+
+        try {
+          const snapshot = await get(participantsRef);
+          return snapshot.numChildren() >= MAX_PLAYERS;
+        } catch (error) {
+          console.error('[RK Events] Failed to inspect participant count before signup:', error);
+          return isRosterFull();
         }
       }
 
@@ -3577,6 +3710,34 @@
         }
       }
 
+      async function deleteWaitingParticipant(playerIndex) {
+        if (!canUseAdminControls()) {
+          return;
+        }
+
+        const index = Number(playerIndex);
+        if (!Number.isInteger(index) || index < 0 || index >= waitingPlayers.length) {
+          return;
+        }
+
+        const player = waitingPlayers[index];
+
+        if (!isFirebaseAvailable || !waitlistRef || !player?.id) {
+          waitingPlayers.splice(index, 1);
+          persistLocalEventState();
+          renderPlayerList();
+          return;
+        }
+
+        try {
+          await remove(ref(waitlistRef, player.id));
+          persistLocalEventState();
+        } catch (error) {
+          console.error(error);
+          shareStatus.textContent = 'Unable to delete waitlist participant. Please verify your Firebase permissions.';
+        }
+      }
+
       async function resetEventState() {
         if (!canUseAdminControls()) {
           return;
@@ -3584,6 +3745,7 @@
 
         if (!isFirebaseAvailable || !participantsRef || !eventRef) {
           players.length = 0;
+          waitingPlayers.length = 0;
           spectatorVotes.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
@@ -3599,6 +3761,9 @@
 
         try {
           await remove(participantsRef);
+          if (waitlistRef) {
+            await remove(waitlistRef);
+          }
           if (spectatorVotesRef) {
             await remove(spectatorVotesRef);
           }
@@ -3617,7 +3782,7 @@
 
       async function handleSubmit(event) {
         event.preventDefault();
-        if (players.length >= MAX_PLAYERS || isShufflingRoster || isRosterFinalized) {
+        if (isShufflingRoster || isRosterFinalized) {
           return;
         }
 
@@ -3630,14 +3795,22 @@
         form.reset();
 
         if (!isFirebaseAvailable || !participantsRef) {
-          players.push(player);
+          const addToWaitlist = isRosterFull();
+          if (addToWaitlist) {
+            waitingPlayers.push(player);
+          } else {
+            players.push(player);
+          }
           persistLocalEventState();
           renderPlayerList();
-          renderBracket();
+          if (!addToWaitlist) {
+            renderBracket();
+          }
           return;
         }
 
-        await addParticipantToDatabase(player);
+        const addToWaitlist = await shouldQueueParticipantRemotely();
+        await addParticipantToDatabase(player, addToWaitlist ? 'waitlist' : 'participants');
       }
 
       function wireUiEventListeners() {
@@ -3663,17 +3836,27 @@
 
           hideProfileCard(true);
         });
-        listEl.addEventListener('click', async (event) => {
-          if (!canUseAdminControls()) {
+        const handleEntryDelete = async (event) => {
+          if (!canUseAdminControls() || !(event.target instanceof Element)) {
             return;
           }
+
           const deleteButton = event.target.closest('.admin-delete');
           if (!deleteButton) {
             return;
           }
+
           const playerIndex = deleteButton.dataset.playerIndex;
+          if (deleteButton.dataset.playerList === 'waitlist') {
+            await deleteWaitingParticipant(playerIndex);
+            return;
+          }
+
           await deleteParticipant(playerIndex);
-        });
+        };
+
+        listEl.addEventListener('click', handleEntryDelete);
+        waitlistListEl.addEventListener('click', handleEntryDelete);
         focusToggle.addEventListener('click', () => {
           setBracketFocusMode(!isBracketFocus);
         });
@@ -3742,6 +3925,29 @@
             initializeEmptyEntriesFallback();
           },
         );
+
+        if (waitlistRef) {
+          onValue(
+            query(waitlistRef, orderByChild('createdAt')),
+            (snapshot) => {
+              waitingPlayers.length = 0;
+              snapshot.forEach((docItem) => {
+                waitingPlayers.push({
+                  id: docItem.key,
+                  ...docItem.val(),
+                });
+              });
+
+              persistLocalEventState();
+              renderPlayerList();
+            },
+            (error) => {
+              console.error('[RK Events] Waitlist listener error:', error?.code, error?.message);
+              shareStatus.textContent = 'Realtime waitlist sync error. Refreshing list from local input.';
+              initializeEmptyEntriesFallback();
+            },
+          );
+        }
 
         onValue(
           query(spectatorVotesRef, orderByChild('createdAt')),

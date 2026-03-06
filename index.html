@@ -411,6 +411,258 @@
         text-align: right;
       }
 
+      .spectator-insights-admin {
+        margin-top: 16px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 3px dashed var(--black);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .spectator-insights-admin-note {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .spectator-insights-publish,
+      .spectator-insights-toggle {
+        width: 100%;
+      }
+
+      .spectator-insights-publish {
+        background: var(--black);
+        color: var(--brand-yellow);
+      }
+
+      .spectator-insights-toggle {
+        margin-top: 16px;
+        background: linear-gradient(135deg, #121212 0%, #3c1f7a 100%);
+        color: var(--white);
+      }
+
+      .spectator-insights {
+        margin-top: 16px;
+        padding: 18px;
+        border: 4px solid var(--black);
+        border-radius: 22px;
+        background:
+          radial-gradient(circle at top right, rgba(255, 207, 0, 0.42), transparent 34%),
+          linear-gradient(160deg, #121212 0%, #25124b 58%, #0b446b 100%);
+        color: var(--white);
+        box-shadow: 6px 6px 0px var(--black);
+      }
+
+      .spectator-insights-headline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+
+      .spectator-insights-kicker {
+        margin: 0 0 8px;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .spectator-insights-title {
+        margin: 0;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+      }
+
+      .spectator-insights-caption {
+        margin: 0;
+        max-width: 28ch;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.5;
+        text-align: right;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .spectator-insights-summary,
+      .spectator-insights-podium,
+      .spectator-insights-chart {
+        display: grid;
+        gap: 12px;
+      }
+
+      .spectator-insights-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .spectator-insight-stat,
+      .spectator-podium-card,
+      .spectator-chart-row {
+        animation: spectatorDropIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: calc(var(--order, 0) * 70ms);
+      }
+
+      .spectator-insight-stat {
+        min-width: 0;
+        padding: 14px;
+        border-radius: 18px;
+        border: 3px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .spectator-insight-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .spectator-insight-value {
+        margin: 0;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+      }
+
+      .spectator-insight-detail {
+        margin: 8px 0 0;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .spectator-insights-podium {
+        margin-top: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .spectator-podium-card {
+        min-width: 0;
+        padding: 14px;
+        border-radius: 18px;
+        border: 3px solid var(--black);
+        color: var(--black);
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
+      }
+
+      .spectator-podium-card.rank-1 {
+        background: linear-gradient(180deg, #ffcf00 0%, #fff2a6 100%);
+      }
+
+      .spectator-podium-card.rank-2 {
+        background: linear-gradient(180deg, #9ef5ff 0%, #e9fdff 100%);
+      }
+
+      .spectator-podium-card.rank-3 {
+        background: linear-gradient(180deg, #ff8baa 0%, #ffd9e6 100%);
+      }
+
+      .spectator-podium-rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 2px solid var(--black);
+        background: rgba(255, 255, 255, 0.65);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .spectator-podium-name {
+        margin: 12px 0 6px;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+      }
+
+      .spectator-podium-meta {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .spectator-insights-chart {
+        margin-top: 16px;
+      }
+
+      .spectator-chart-row {
+        display: grid;
+        grid-template-columns: minmax(0, 118px) minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .spectator-chart-name {
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .spectator-chart-track {
+        position: relative;
+        height: 18px;
+        min-width: 0;
+        border: 2px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .spectator-chart-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--fill-width, 0%);
+        min-width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--brand-yellow) 0%, #ff8baa 55%, var(--brand-alt) 100%);
+      }
+
+      .spectator-chart-value {
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
       .spectator-votes,
       .reward-winners {
         margin: 16px 0 0;
@@ -1063,6 +1315,20 @@
         .registration-panel form {
           grid-template-columns: 1fr;
         }
+
+        .spectator-insights-summary,
+        .spectator-insights-podium {
+          grid-template-columns: 1fr;
+        }
+
+        .spectator-chart-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .spectator-insights-caption {
+          text-align: left;
+        }
       }
 
       @media (max-width: 640px) {
@@ -1163,6 +1429,23 @@
               <button type="submit" id="spectatorVoteButton">Lock Prediction</button>
             </form>
             <p class="spectator-count" id="spectatorCountText">Predictions: 0</p>
+            <div class="spectator-insights-admin hidden" id="spectatorInsightsAdmin">
+              <p class="spectator-insights-admin-note" id="spectatorInsightsAdminNote">Keep this sealed while votes are coming in, then reveal it before the opening match.</p>
+              <button type="button" id="spectatorInsightsPublishButton" class="spectator-insights-publish" aria-pressed="false">Reveal Vote Dashboard</button>
+            </div>
+            <button type="button" id="spectatorInsightsToggle" class="spectator-insights-toggle hidden" aria-expanded="false" aria-controls="spectatorInsightsPanel">Show Vote Dashboard</button>
+            <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true">
+              <div class="spectator-insights-headline">
+                <div>
+                  <p class="spectator-insights-kicker">Crowd Pulse</p>
+                  <h4 class="spectator-insights-title">Vote Dashboard</h4>
+                </div>
+                <p class="spectator-insights-caption" id="spectatorInsightsCaption">See which players have the room talking before the first serve.</p>
+              </div>
+              <div class="spectator-insights-summary" id="spectatorInsightsSummary"></div>
+              <div class="spectator-insights-podium" id="spectatorInsightsPodium"></div>
+              <div class="spectator-insights-chart" id="spectatorInsightsChart"></div>
+            </section>
             <ul class="spectator-votes" id="spectatorVoteList"></ul>
             <div class="spectator-prize-board hidden" id="spectatorPrizeBoard">
               <span class="spectator-prize-badge">Prize Drop</span>
@@ -1261,6 +1544,15 @@
       const spectatorVoteButton = document.getElementById('spectatorVoteButton');
       const spectatorVoteStatus = document.getElementById('spectatorVoteStatus');
       const spectatorCountText = document.getElementById('spectatorCountText');
+      const spectatorInsightsAdmin = document.getElementById('spectatorInsightsAdmin');
+      const spectatorInsightsAdminNote = document.getElementById('spectatorInsightsAdminNote');
+      const spectatorInsightsPublishButton = document.getElementById('spectatorInsightsPublishButton');
+      const spectatorInsightsToggle = document.getElementById('spectatorInsightsToggle');
+      const spectatorInsightsPanel = document.getElementById('spectatorInsightsPanel');
+      const spectatorInsightsCaption = document.getElementById('spectatorInsightsCaption');
+      const spectatorInsightsSummary = document.getElementById('spectatorInsightsSummary');
+      const spectatorInsightsPodium = document.getElementById('spectatorInsightsPodium');
+      const spectatorInsightsChart = document.getElementById('spectatorInsightsChart');
       const spectatorVoteList = document.getElementById('spectatorVoteList');
       const spectatorPrizeBoard = document.getElementById('spectatorPrizeBoard');
       const spectatorPrizeTitle = document.getElementById('spectatorPrizeTitle');
@@ -1330,6 +1622,8 @@
       let isAdminMode = false;
       let currentView = 'user';
       let isSwitchingViews = false;
+      let isSpectatorInsightsPublished = false;
+      let isSpectatorInsightsExpanded = false;
       let isProfileCardPinned = false;
       let activeProfileCardKey = '';
       let firebaseRetryCount = 0;
@@ -1504,6 +1798,7 @@
         }
         syncAdminControls();
         renderPlayerList();
+        renderSpectatorSection();
       }
 
       function requireAdminGate() {
@@ -1650,6 +1945,287 @@
         return spectatorVotes.filter((vote) => vote.pickKey === championKey);
       }
 
+      function formatVoteShare(votes, totalVotes) {
+        if (!totalVotes) {
+          return '0%';
+        }
+
+        const share = (votes / totalVotes) * 100;
+        const roundedShare = share >= 10 ? Math.round(share) : Number(share.toFixed(1));
+        return `${roundedShare}%`;
+      }
+
+      function getSpectatorVoteInsights() {
+        const standingsMap = new Map();
+
+        players.forEach((player, index) => {
+          const playerKey = getPlayerSelectionKey(player);
+          standingsMap.set(playerKey, {
+            key: playerKey,
+            name: player.name,
+            votes: 0,
+            order: index,
+          });
+        });
+
+        spectatorVotes.forEach((vote, index) => {
+          if (!vote?.pickKey) {
+            return;
+          }
+
+          const existingEntry = standingsMap.get(vote.pickKey);
+          if (existingEntry) {
+            existingEntry.votes += 1;
+            return;
+          }
+
+          standingsMap.set(vote.pickKey, {
+            key: vote.pickKey,
+            name: vote.pickName || `Mystery Pick ${index + 1}`,
+            votes: 1,
+            order: players.length + index,
+          });
+        });
+
+        const standings = Array.from(standingsMap.values()).sort((left, right) =>
+          right.votes - left.votes
+          || left.order - right.order
+          || left.name.localeCompare(right.name),
+        );
+        const totalVotes = spectatorVotes.length;
+        const leaderVotes = standings[0]?.votes || 0;
+        const leaders = leaderVotes > 0
+          ? standings.filter((entry) => entry.votes === leaderVotes)
+          : [];
+        const runnerUp = standings.find((entry) => entry.votes < leaderVotes) || null;
+        const supportedPlayersCount = standings.filter((entry) => entry.votes > 0).length;
+
+        return {
+          totalVotes,
+          standings,
+          leaderVotes,
+          leaders,
+          runnerUp,
+          supportedPlayersCount,
+          topThree: standings.filter((entry) => entry.votes > 0).slice(0, 3),
+          maxVotes: Math.max(leaderVotes, 1),
+        };
+      }
+
+      function makeSpectatorInsightStat(label, value, detail, order = 0) {
+        const card = document.createElement('article');
+        card.className = 'spectator-insight-stat';
+        card.style.setProperty('--order', String(order));
+
+        const title = document.createElement('span');
+        title.className = 'spectator-insight-label';
+        title.textContent = label;
+        card.appendChild(title);
+
+        const valueNode = document.createElement('p');
+        valueNode.className = 'spectator-insight-value';
+        valueNode.textContent = value;
+        card.appendChild(valueNode);
+
+        const detailNode = document.createElement('p');
+        detailNode.className = 'spectator-insight-detail';
+        detailNode.textContent = detail;
+        card.appendChild(detailNode);
+
+        return card;
+      }
+
+      function makeSpectatorPodiumCard(entry, rankIndex) {
+        const card = document.createElement('article');
+        card.className = `spectator-podium-card rank-${Math.min(rankIndex + 1, 3)}`;
+        card.style.setProperty('--order', String(rankIndex));
+
+        const rank = document.createElement('span');
+        rank.className = 'spectator-podium-rank';
+        rank.textContent = `#${rankIndex + 1}`;
+        card.appendChild(rank);
+
+        const name = document.createElement('h5');
+        name.className = 'spectator-podium-name';
+        name.textContent = entry.name;
+        card.appendChild(name);
+
+        const meta = document.createElement('p');
+        meta.className = 'spectator-podium-meta';
+        meta.textContent = `${entry.votes} vote${entry.votes === 1 ? '' : 's'} · ${formatVoteShare(entry.votes, spectatorVotes.length)}`;
+        card.appendChild(meta);
+
+        return card;
+      }
+
+      function makeSpectatorChartRow(entry, maxVotes, totalVotes, index) {
+        const row = document.createElement('article');
+        row.className = 'spectator-chart-row';
+        row.style.setProperty('--order', String(index));
+
+        const name = document.createElement('span');
+        name.className = 'spectator-chart-name';
+        name.textContent = entry.name;
+        row.appendChild(name);
+
+        const track = document.createElement('div');
+        track.className = 'spectator-chart-track';
+
+        const fill = document.createElement('span');
+        fill.className = 'spectator-chart-fill';
+        fill.style.setProperty('--fill-width', `${(entry.votes / maxVotes) * 100}%`);
+        track.appendChild(fill);
+        row.appendChild(track);
+
+        const value = document.createElement('span');
+        value.className = 'spectator-chart-value';
+        value.textContent = `${entry.votes} · ${formatVoteShare(entry.votes, totalVotes)}`;
+        row.appendChild(value);
+
+        return row;
+      }
+
+      function renderSpectatorInsights() {
+        const insights = getSpectatorVoteInsights();
+        const hasVotes = insights.totalVotes > 0;
+        const canManageInsights = isAdmin();
+        const canRevealInsights = isSpectatorInsightsPublished && hasVotes;
+
+        spectatorInsightsAdmin.classList.toggle('hidden', !canManageInsights);
+        spectatorInsightsPublishButton.disabled = !canManageInsights || !hasVotes;
+        spectatorInsightsPublishButton.textContent = isSpectatorInsightsPublished ? 'Hide Vote Dashboard' : 'Reveal Vote Dashboard';
+        spectatorInsightsPublishButton.setAttribute('aria-pressed', String(isSpectatorInsightsPublished));
+
+        if (canManageInsights) {
+          if (!hasVotes) {
+            spectatorInsightsAdminNote.textContent = 'At least one prediction is needed before the crowd dashboard can go live.';
+          } else if (!isSpectatorInsightsPublished) {
+            spectatorInsightsAdminNote.textContent = 'Keep this sealed while votes are coming in, then reveal it before the opening match.';
+          } else if (hasTournamentStarted()) {
+            spectatorInsightsAdminNote.textContent = 'The vote dashboard is live and stays available while the bracket plays out.';
+          } else {
+            spectatorInsightsAdminNote.textContent = 'The vote dashboard is live. Spectators can open it to see who the room is backing.';
+          }
+        }
+
+        if (!canRevealInsights) {
+          isSpectatorInsightsExpanded = false;
+        }
+
+        spectatorInsightsToggle.classList.toggle('hidden', !canRevealInsights);
+        spectatorInsightsToggle.disabled = !canRevealInsights;
+        spectatorInsightsToggle.textContent = isSpectatorInsightsExpanded ? 'Hide Vote Dashboard' : 'Show Vote Dashboard';
+        spectatorInsightsToggle.setAttribute('aria-expanded', String(canRevealInsights && isSpectatorInsightsExpanded));
+
+        const shouldShowPanel = canRevealInsights && isSpectatorInsightsExpanded;
+        spectatorInsightsPanel.classList.toggle('hidden', !shouldShowPanel);
+        spectatorInsightsPanel.setAttribute('aria-hidden', String(!shouldShowPanel));
+
+        spectatorInsightsSummary.innerHTML = '';
+        spectatorInsightsPodium.innerHTML = '';
+        spectatorInsightsChart.innerHTML = '';
+
+        if (!shouldShowPanel) {
+          return;
+        }
+
+        const leaderLabel = insights.leaders.length > 1
+          ? `${insights.leaders.length}-way tie`
+          : insights.leaders[0]?.name || 'No leader yet';
+        const leaderDetail = insights.leaders.length > 1
+          ? `${insights.leaderVotes} votes each at the top`
+          : `${insights.leaderVotes} vote${insights.leaderVotes === 1 ? '' : 's'} on the board`;
+        const gapVotes = insights.runnerUp ? insights.leaderVotes - insights.runnerUp.votes : 0;
+        const runnerDetail = insights.runnerUp
+          ? `${gapVotes} vote${gapVotes === 1 ? '' : 's'} clear of ${insights.runnerUp.name}`
+          : 'No chase pack yet';
+
+        spectatorInsightsCaption.textContent = hasTournamentStarted()
+          ? 'The crowd picks are locked in. Compare the room hype with the live bracket.'
+          : 'The crowd reveal is live. See who the room is backing before the first serve.';
+
+        spectatorInsightsSummary.appendChild(
+          makeSpectatorInsightStat(
+            'Votes In',
+            String(insights.totalVotes),
+            `${insights.supportedPlayersCount} player${insights.supportedPlayersCount === 1 ? '' : 's'} received support`,
+            0,
+          ),
+        );
+        spectatorInsightsSummary.appendChild(
+          makeSpectatorInsightStat(
+            'Front-runner',
+            leaderLabel,
+            leaderDetail,
+            1,
+          ),
+        );
+        spectatorInsightsSummary.appendChild(
+          makeSpectatorInsightStat(
+            'Race Gap',
+            insights.runnerUp ? `${gapVotes} vote${gapVotes === 1 ? '' : 's'}` : 'Clear Lead',
+            runnerDetail,
+            2,
+          ),
+        );
+
+        insights.topThree.forEach((entry, index) => {
+          spectatorInsightsPodium.appendChild(makeSpectatorPodiumCard(entry, index));
+        });
+
+        insights.standings.forEach((entry, index) => {
+          spectatorInsightsChart.appendChild(
+            makeSpectatorChartRow(entry, insights.maxVotes, insights.totalVotes, index),
+          );
+        });
+      }
+
+      async function handleSpectatorInsightsPublishToggle() {
+        if (!isAdmin()) {
+          return;
+        }
+
+        if (!spectatorVotes.length) {
+          spectatorVoteStatus.textContent = 'At least one prediction is needed before the vote dashboard can be revealed.';
+          renderSpectatorSection();
+          return;
+        }
+
+        const previousPublishedState = isSpectatorInsightsPublished;
+        const previousExpandedState = isSpectatorInsightsExpanded;
+        const nextPublishedState = !isSpectatorInsightsPublished;
+
+        isSpectatorInsightsPublished = nextPublishedState;
+        isSpectatorInsightsExpanded = nextPublishedState;
+        persistLocalEventState();
+        renderSpectatorSection();
+
+        try {
+          if (isFirebaseAvailable && eventRef) {
+            await update(eventRef, {
+              isSpectatorInsightsPublished: nextPublishedState,
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          isSpectatorInsightsPublished = previousPublishedState;
+          isSpectatorInsightsExpanded = previousExpandedState;
+          persistLocalEventState();
+          renderSpectatorSection();
+          spectatorVoteStatus.textContent = 'Unable to update the vote dashboard visibility right now.';
+        }
+      }
+
+      function handleSpectatorInsightsToggle() {
+        if (!isSpectatorInsightsPublished || !spectatorVotes.length) {
+          return;
+        }
+
+        isSpectatorInsightsExpanded = !isSpectatorInsightsExpanded;
+        renderSpectatorSection();
+      }
+
       function renderSpectatorPickOptions() {
         const currentValue = spectatorPickSelect.value;
         const activePlayers = players.filter((player) => !player.empty);
@@ -1700,6 +2276,7 @@
         }
 
         spectatorCountText.textContent = `Predictions: ${spectatorVotes.length}`;
+        renderSpectatorInsights();
         spectatorVoteList.innerHTML = '';
 
         if (!spectatorVotes.length) {
@@ -1858,6 +2435,7 @@
           title: 'Swanston Table Tennis Tournament',
           maxPlayers: MAX_PLAYERS,
           isRosterFinalized: false,
+          isSpectatorInsightsPublished: false,
           rosterOrder: [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -1927,6 +2505,10 @@
             isRosterFinalized = state.isRosterFinalized;
           }
 
+          if (typeof state.isSpectatorInsightsPublished === 'boolean') {
+            isSpectatorInsightsPublished = state.isSpectatorInsightsPublished;
+          }
+
           if (state.matchWinners && typeof state.matchWinners === 'object') {
             matchWinners = state.matchWinners;
           }
@@ -1950,6 +2532,7 @@
           spectatorVotes,
           rosterOrder,
           isRosterFinalized,
+          isSpectatorInsightsPublished,
           matchWinners,
           updatedAt: Date.now(),
         };
@@ -2060,6 +2643,7 @@
                 isRosterFinalized: true,
                 rosterOrder: finalizedIds,
                 matchWinners: {},
+                isSpectatorInsightsPublished,
                 maxPlayers: MAX_PLAYERS,
                 updatedAt: serverTimestamp(),
               });
@@ -2896,6 +3480,8 @@
           spectatorVotes.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
+          isSpectatorInsightsPublished = false;
+          isSpectatorInsightsExpanded = false;
           matchWinners = {};
           clearLocalEventState();
           setRosterShuffleMode(false);
@@ -2913,6 +3499,7 @@
           await update(eventRef, {
             rosterOrder: [],
             isRosterFinalized: false,
+            isSpectatorInsightsPublished: false,
             matchWinners: {},
             updatedAt: serverTimestamp(),
           });
@@ -2951,6 +3538,8 @@
       function wireUiEventListeners() {
         form.addEventListener('submit', handleSubmit);
         spectatorForm.addEventListener('submit', handleSpectatorVoteSubmit);
+        spectatorInsightsPublishButton.addEventListener('click', handleSpectatorInsightsPublishToggle);
+        spectatorInsightsToggle.addEventListener('click', handleSpectatorInsightsToggle);
         clearButton.addEventListener('click', resetEventState);
         bracketShell.addEventListener('scroll', () => hideProfileCard(true), { passive: true });
         document.addEventListener('click', (event) => {
@@ -3070,6 +3659,7 @@
             const data = snapshot.val();
             rosterOrder = Array.isArray(data?.rosterOrder) ? data.rosterOrder : [];
             isRosterFinalized = Boolean(data?.isRosterFinalized);
+            isSpectatorInsightsPublished = Boolean(data?.isSpectatorInsightsPublished);
             matchWinners = (data?.matchWinners && typeof data.matchWinners === 'object')
               ? data.matchWinners
               : {};

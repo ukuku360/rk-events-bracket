@@ -40,7 +40,7 @@
       }
 
       .page {
-        max-width: 1280px;
+        max-width: 1480px;
         margin: 0 auto;
         padding: 40px 24px 64px;
       }
@@ -122,8 +122,8 @@
 
       .content {
         display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 32px;
+        grid-template-columns: minmax(520px, 0.95fr) minmax(0, 1.25fr);
+        gap: 40px;
         align-items: start;
       }
 
@@ -245,6 +245,32 @@
         padding: 18px;
       }
 
+      .user-panel-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        align-content: start;
+      }
+
+      .user-card {
+        min-width: 0;
+      }
+
+      .registration-panel {
+        grid-column: 1 / -1;
+      }
+
+      .registration-panel form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: end;
+      }
+
+      .registration-panel #addButton {
+        width: 100%;
+        margin-top: 0;
+        min-height: 62px;
+      }
+
       .small {
         font-weight: 800;
         font-size: 16px;
@@ -300,15 +326,10 @@
         font-size: 16px;
       }
 
-      .spectator-lounge {
-        margin-top: 28px;
-        padding: 18px;
-        border: 4px solid var(--black);
-        border-radius: 20px;
+      .spectator-panel {
         background:
           linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.96) 62%, rgba(255, 51, 102, 0.14) 100%),
           linear-gradient(135deg, var(--brand-alt) 0%, var(--brand-yellow) 100%);
-        box-shadow: 7px 7px 0px var(--black);
       }
 
       .spectator-head {
@@ -348,7 +369,13 @@
 
       .spectator-form {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
+      }
+
+      .spectator-form button {
+        grid-column: 1 / -1;
+        width: 100%;
       }
 
       #spectatorVoteButton {
@@ -474,6 +501,32 @@
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.07em;
+      }
+
+      .entries-panel {
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, #fffef8 0%, #fff7d6 100%);
+      }
+
+      .entries-count {
+        margin: 0;
+        display: inline-flex;
+        align-self: flex-start;
+        padding: 8px 14px;
+        border: 3px solid var(--black);
+        border-radius: 999px;
+        background: var(--brand-yellow);
+        box-shadow: 4px 4px 0px var(--black);
+        font-size: 14px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .entries-panel .players {
+        margin-top: 18px;
+        max-height: 560px;
       }
 
       .admin-delete {
@@ -925,11 +978,7 @@
 
       body.bracket-focus .hero,
       body.bracket-focus .event-summary,
-      body.bracket-focus .content > section:first-child {
-        display: none !important;
-      }
-
-      body.bracket-focus .content > .panel:not(.bracket-panel) {
+      body.bracket-focus .content > :not(.bracket-panel) {
         display: none !important;
       }
 
@@ -968,9 +1017,38 @@
         }
       }
 
+      @media (max-width: 1320px) {
+        .content {
+          grid-template-columns: minmax(420px, 460px) minmax(0, 1fr);
+        }
+
+        .user-panel-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .registration-panel {
+          grid-column: auto;
+        }
+      }
+
       @media (max-width: 1080px) {
         .content {
           grid-template-columns: 1fr;
+        }
+
+        .entries-panel .players {
+          max-height: 360px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .registration-panel form,
+        .spectator-form {
+          grid-template-columns: 1fr;
+        }
+
+        .spectator-form button {
+          grid-column: auto;
         }
       }
 
@@ -1034,25 +1112,27 @@
       </div>
 
       <div class="content">
-        <section class="panel view-panel" id="userPanel" role="tabpanel" aria-labelledby="userTab">
-          <h2>Player Registration</h2>
-          <form id="signupForm">
-            <label>
-              <span>Name</span>
-              <input id="name" name="name" type="text" placeholder="e.g. Minji" required />
-            </label>
-            <label>
-              <span>Aura Skill</span>
-              <input id="aura" name="aura" type="text" placeholder="e.g. Quick reflex" required />
-            </label>
-            <label>
-              <span>Weak Point (for fun)</span>
-              <input id="weak" name="weak" type="text" placeholder="e.g. Slow in long rallies" required />
-            </label>
-            <button type="submit" id="addButton">Add Participant</button>
-          </form>
+        <div class="view-panel user-panel-grid" id="userPanel" role="tabpanel" aria-labelledby="userTab">
+          <section class="panel user-card registration-panel">
+            <h2>Player Registration</h2>
+            <form id="signupForm">
+              <label>
+                <span>Name</span>
+                <input id="name" name="name" type="text" placeholder="e.g. Minji" required />
+              </label>
+              <label>
+                <span>Aura Skill</span>
+                <input id="aura" name="aura" type="text" placeholder="e.g. Quick reflex" required />
+              </label>
+              <label>
+                <span>Weak Point (for fun)</span>
+                <input id="weak" name="weak" type="text" placeholder="e.g. Slow in long rallies" required />
+              </label>
+              <button type="submit" id="addButton">Add Participant</button>
+            </form>
+          </section>
 
-          <section class="spectator-lounge" aria-labelledby="spectatorTitle">
+          <section class="panel user-card spectator-panel" aria-labelledby="spectatorTitle">
             <div class="spectator-head">
               <p class="spectator-eyebrow">Spectator Prize Pick</p>
               <h3 class="spectator-title" id="spectatorTitle">Back Your Champion</h3>
@@ -1079,10 +1159,12 @@
             </div>
           </section>
 
-          <p class="small" id="countText">Entries: 0 / 16</p>
-
-          <ul class="players" id="playerList"></ul>
-        </section>
+          <section class="panel user-card entries-panel" aria-labelledby="entriesTitle">
+            <h2 id="entriesTitle">Entries</h2>
+            <p class="entries-count" id="countText">Entries: 0 / 16</p>
+            <ul class="players" id="playerList"></ul>
+          </section>
+        </div>
 
         <section class="panel view-panel hidden" id="adminPanel" role="tabpanel" aria-labelledby="adminTab">
           <h2>Admin Dashboard</h2>

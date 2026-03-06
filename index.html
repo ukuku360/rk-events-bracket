@@ -630,6 +630,35 @@
         text-anchor: middle;
       }
 
+      .placement-panel {
+        fill: #fff7cc;
+        stroke: var(--black);
+        stroke-width: 4;
+      }
+
+      .placement-panel-title {
+        fill: var(--black);
+        font-size: 24px;
+        font-weight: 900;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        letter-spacing: -0.03em;
+      }
+
+      .placement-panel-note {
+        fill: #444;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+
+      .placement-line {
+        stroke: var(--brand);
+        stroke-width: 4;
+        fill: none;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+
       g.node-profileable {
         cursor: help;
       }
@@ -678,6 +707,28 @@
       }
       g.node-champion .node-text {
         font-size: 16px;
+        fill: var(--black);
+      }
+
+      g.node-third-place .node-rect {
+        fill: #f4a300;
+        stroke: var(--black);
+        stroke-width: 4;
+      }
+
+      g.node-third-place .node-text,
+      g.node-third-place .node-meta {
+        fill: var(--black);
+      }
+
+      g.node-fourth-place .node-rect {
+        fill: #d7deea;
+        stroke: var(--black);
+        stroke-width: 3;
+      }
+
+      g.node-fourth-place .node-text,
+      g.node-fourth-place .node-meta {
         fill: var(--black);
       }
 
@@ -927,6 +978,9 @@
       const NODE_TEXT_MAX_WIDTH = NODE_WIDTH - 20;
       const NODE_TEXT_BASE_FONT_SIZE = 14;
       const NODE_TEXT_MIN_FONT_SIZE = 10;
+      const THIRD_PLACE_KEY = 'third-0';
+      const THIRD_PLACE_PANEL_WIDTH = 420;
+      const THIRD_PLACE_PANEL_GAP = 44;
       const PROFILE_CARD_MARGIN = 16;
       const PROFILE_CARD_GAP = 18;
       const SLOT_GAP = 22;
@@ -1495,6 +1549,87 @@
         }
       }
 
+      function getWinnerKey(level, matchIndex) {
+        return `${level}-${matchIndex}`;
+      }
+
+      function getMatchParticipantIndexes(level, matchIndex) {
+        if (level < 1 || level > 4) {
+          return [];
+        }
+
+        if (level === 1) {
+          return [matchIndex * 2, matchIndex * 2 + 1];
+        }
+
+        const leftWinner = matchWinners[getWinnerKey(level - 1, matchIndex * 2)];
+        const rightWinner = matchWinners[getWinnerKey(level - 1, matchIndex * 2 + 1)];
+        return [leftWinner, rightWinner].filter((entrantIndex) => entrantIndex !== undefined);
+      }
+
+      function getMatchLoserIndex(level, matchIndex) {
+        const participants = getMatchParticipantIndexes(level, matchIndex);
+        const winnerIndex = matchWinners[getWinnerKey(level, matchIndex)];
+
+        if (participants.length < 2 || winnerIndex === undefined) {
+          return undefined;
+        }
+
+        return participants.find((entrantIndex) => entrantIndex !== winnerIndex);
+      }
+
+      function getThirdPlaceEntrantIndexes() {
+        return [getMatchLoserIndex(3, 0), getMatchLoserIndex(3, 1)];
+      }
+
+      function getFourthPlaceIndex() {
+        const thirdPlaceWinner = matchWinners[THIRD_PLACE_KEY];
+        if (thirdPlaceWinner === undefined) {
+          return undefined;
+        }
+
+        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes();
+        return thirdPlaceEntrants.find((entrantIndex) => entrantIndex !== undefined && entrantIndex !== thirdPlaceWinner);
+      }
+
+      function clearThirdPlaceWinner() {
+        if (matchWinners[THIRD_PLACE_KEY] !== undefined) {
+          delete matchWinners[THIRD_PLACE_KEY];
+        }
+      }
+
+      function drawPlacementPanel(x, y, width, height) {
+        const panel = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        panel.setAttribute('x', x);
+        panel.setAttribute('y', y);
+        panel.setAttribute('width', width);
+        panel.setAttribute('height', height);
+        panel.setAttribute('rx', 24);
+        panel.setAttribute('class', 'placement-panel');
+        edgesLayer.appendChild(panel);
+
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        title.setAttribute('x', x + 24);
+        title.setAttribute('y', y + 42);
+        title.setAttribute('class', 'placement-panel-title');
+        title.textContent = '3RD PLACE PLAYOFF';
+        edgesLayer.appendChild(title);
+
+        const noteTop = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        noteTop.setAttribute('x', x + 24);
+        noteTop.setAttribute('y', y + 68);
+        noteTop.setAttribute('class', 'placement-panel-note');
+        noteTop.textContent = 'SEMIFINAL LOSERS DROP HERE.';
+        edgesLayer.appendChild(noteTop);
+
+        const noteBottom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        noteBottom.setAttribute('x', x + 24);
+        noteBottom.setAttribute('y', y + 88);
+        noteBottom.setAttribute('class', 'placement-panel-note');
+        noteBottom.textContent = 'CLICK A PLAYER TO LOCK 3RD PLACE.';
+        edgesLayer.appendChild(noteBottom);
+      }
+
       function makeProfileCardData(player, metaLabel) {
         if (!player || player.empty) {
           return null;
@@ -1643,6 +1778,7 @@
           isChampion = false,
           onClick,
           profileData = null,
+          extraClasses = [],
         } = options;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
@@ -1652,6 +1788,9 @@
         if (isLoser) gClasses.push('node-loser');
         if (isChampion) gClasses.push('node-champion');
         if (profileData) gClasses.push('node-profileable');
+        if (Array.isArray(extraClasses) && extraClasses.length) {
+          gClasses.push(...extraClasses);
+        }
         if (gClasses.length) g.setAttribute('class', gClasses.join(' '));
 
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1699,7 +1838,7 @@
         });
       }
 
-      function drawConnector(from, to) {
+      function drawConnector(from, to, className = 'line') {
         const x1 = from.x;
         const y1 = from.y + NODE_HEIGHT / 2;
         const x2 = to.x;
@@ -1708,7 +1847,7 @@
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`);
-        path.setAttribute('class', 'line');
+        path.setAttribute('class', className);
         edgesLayer.appendChild(path);
       }
 
@@ -1716,6 +1855,9 @@
         const key = `${level}-${matchIndex}`;
         if (matchWinners[key] !== undefined) {
           delete matchWinners[key];
+          if (level <= 3) {
+            clearThirdPlaceWinner();
+          }
           const parentLevel = level + 1;
           const parentMatchIndex = Math.floor(matchIndex / 2);
           if (parentLevel <= 4) {
@@ -1752,6 +1894,9 @@
         }
 
         matchWinners[key] = winnerEntrantIndex;
+        if (parentLevel === 3) {
+          clearThirdPlaceWinner();
+        }
 
         // Trigger confetti / champion celebration
         const cx = clientX ?? window.innerWidth / 2;
@@ -1765,6 +1910,35 @@
         } else {
           triggerWinnerConfetti(cx, cy);
         }
+
+        renderBracket();
+        persistLocalEventState();
+
+        if (isFirebaseAvailable && eventRef) {
+          update(eventRef, { matchWinners, updatedAt: serverTimestamp() });
+        }
+      }
+
+      function selectThirdPlaceWinner(winnerEntrantIndex, clientX, clientY) {
+        if (!isRosterFinalized || !canUseRosterControls()) {
+          return;
+        }
+
+        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes();
+        const playoffReady = thirdPlaceEntrants.every((entrantIndex) => entrantIndex !== undefined);
+        if (!playoffReady || !thirdPlaceEntrants.includes(winnerEntrantIndex)) {
+          return;
+        }
+
+        if (matchWinners[THIRD_PLACE_KEY] === winnerEntrantIndex) {
+          return;
+        }
+
+        matchWinners[THIRD_PLACE_KEY] = winnerEntrantIndex;
+        triggerWinnerConfetti(
+          clientX ?? window.innerWidth / 2,
+          clientY ?? window.innerHeight / 2,
+        );
 
         renderBracket();
         persistLocalEventState();
@@ -1820,7 +1994,8 @@
         const totalLevels = rounds.length;
 
         const slotSpacing = NODE_WIDTH + SLOT_GAP;
-        const svgWidth = X_PADDING * 2 + slotSpacing * (MAX_PLAYERS - 1);
+        const baseSvgWidth = X_PADDING * 2 + slotSpacing * (MAX_PLAYERS - 1);
+        const svgWidth = baseSvgWidth + THIRD_PLACE_PANEL_GAP + THIRD_PLACE_PANEL_WIDTH;
         const svgHeight = TOP_PADDING + ROW_GAP * (totalLevels - 1) + BOTTOM_PADDING;
         const yBottom = TOP_PADDING + ROW_GAP * (totalLevels - 1);
 
@@ -1975,6 +2150,90 @@
             );
           });
         });
+
+        const thirdPlacePanelX = baseSvgWidth + THIRD_PLACE_PANEL_GAP;
+        const thirdPlacePanelY = TOP_PADDING + 12;
+        const thirdPlacePanelHeight = svgHeight - thirdPlacePanelY - (BOTTOM_PADDING - 8);
+        const thirdPlaceCenterX = thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH / 2;
+        const thirdPlaceWinnerNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 128 };
+        const thirdPlaceLoserNodes = [
+          { x: thirdPlacePanelX + 106, y: thirdPlacePanelY + 286 },
+          { x: thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH - 106, y: thirdPlacePanelY + 286 },
+        ];
+        const fourthPlaceNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 418 };
+        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes();
+        const thirdPlaceWinnerIdx = matchWinners[THIRD_PLACE_KEY];
+        const fourthPlaceIdx = getFourthPlaceIndex();
+        const playoffReady = thirdPlaceEntrants.every((entrantIndex) => entrantIndex !== undefined);
+
+        drawPlacementPanel(
+          thirdPlacePanelX,
+          thirdPlacePanelY,
+          THIRD_PLACE_PANEL_WIDTH,
+          thirdPlacePanelHeight,
+        );
+
+        thirdPlaceLoserNodes.forEach((childNode) => {
+          drawConnector(childNode, thirdPlaceWinnerNode, 'placement-line');
+        });
+
+        thirdPlaceLoserNodes.forEach((childNode, idx) => {
+          const entrantIndex = thirdPlaceEntrants[idx];
+          const player = entrantIndex !== undefined ? entrants[entrantIndex] : null;
+          const isWinnerNode = thirdPlaceWinnerIdx !== undefined && thirdPlaceWinnerIdx === entrantIndex;
+          const isLoserNode = thirdPlaceWinnerIdx !== undefined && entrantIndex !== undefined && thirdPlaceWinnerIdx !== entrantIndex;
+          const canSelectThirdPlace = canControl && playoffReady && entrantIndex !== undefined && player && !player.empty;
+
+          makeNode(
+            childNode.x,
+            childNode.y,
+            player && !player.empty ? shortenPlayerName(player.name, 12) : 'Semifinal loser',
+            entrantIndex !== undefined ? `Semi ${idx + 1} loser` : 'Pending semifinal',
+            false,
+            entrantIndex === undefined,
+            {
+              clickable: canSelectThirdPlace,
+              isWinner: isWinnerNode,
+              isLoser: isLoserNode,
+              onClick: canSelectThirdPlace
+                ? (event) => selectThirdPlaceWinner(entrantIndex, event.clientX, event.clientY)
+                : null,
+              profileData: makeProfileCardData(player, `Semifinal ${idx + 1} Loser`),
+            },
+          );
+        });
+
+        {
+          const player = thirdPlaceWinnerIdx !== undefined ? entrants[thirdPlaceWinnerIdx] : null;
+          makeNode(
+            thirdPlaceWinnerNode.x,
+            thirdPlaceWinnerNode.y,
+            player && !player.empty ? shortenPlayerName(player.name, 12) : '3rd Place',
+            thirdPlaceWinnerIdx !== undefined ? '3rd Place Winner' : playoffReady ? 'Playoff pending' : 'Waiting for semifinals',
+            false,
+            thirdPlaceWinnerIdx === undefined,
+            {
+              profileData: makeProfileCardData(player, '3rd Place'),
+              extraClasses: ['node-third-place'],
+            },
+          );
+        }
+
+        {
+          const player = fourthPlaceIdx !== undefined ? entrants[fourthPlaceIdx] : null;
+          makeNode(
+            fourthPlaceNode.x,
+            fourthPlaceNode.y,
+            player && !player.empty ? shortenPlayerName(player.name, 12) : '4th Place',
+            fourthPlaceIdx !== undefined ? '3rd Place Playoff Loser' : playoffReady ? 'Decided after playoff' : 'Waiting for semifinals',
+            false,
+            fourthPlaceIdx === undefined,
+            {
+              profileData: makeProfileCardData(player, '4th Place'),
+              extraClasses: ['node-fourth-place'],
+            },
+          );
+        }
       }
 
       function initializeEmptyEntriesFallback() {

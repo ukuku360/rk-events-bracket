@@ -185,7 +185,8 @@
         text-transform: uppercase;
       }
 
-      input {
+      input,
+      select {
         border: 3px solid var(--black);
         border-radius: 12px;
         padding: 14px 16px;
@@ -196,7 +197,8 @@
         transition: all 0.2s ease;
       }
 
-      input:focus {
+      input:focus,
+      select:focus {
         outline: none;
         background: var(--brand-yellow);
         border-color: var(--black);
@@ -296,6 +298,182 @@
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 16px;
+      }
+
+      .spectator-lounge {
+        margin-top: 28px;
+        padding: 18px;
+        border: 4px solid var(--black);
+        border-radius: 20px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.96) 62%, rgba(255, 51, 102, 0.14) 100%),
+          linear-gradient(135deg, var(--brand-alt) 0%, var(--brand-yellow) 100%);
+        box-shadow: 7px 7px 0px var(--black);
+      }
+
+      .spectator-head {
+        margin-bottom: 16px;
+      }
+
+      .spectator-eyebrow {
+        margin: 0 0 10px;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: var(--black);
+        color: var(--brand-yellow);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .spectator-title {
+        margin: 0 0 8px;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.04em;
+      }
+
+      .spectator-note {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .spectator-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      #spectatorVoteButton {
+        background: var(--brand-alt);
+        color: var(--black);
+      }
+
+      .spectator-count {
+        margin-top: 18px;
+        border-top: 3px dashed var(--black);
+        padding-top: 14px;
+        font-size: 14px;
+        font-weight: 900;
+        text-transform: uppercase;
+        text-align: right;
+      }
+
+      .spectator-votes,
+      .reward-winners {
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 12px;
+      }
+
+      .spectator-votes li,
+      .reward-winners li {
+        margin: 0;
+        padding: 12px 14px;
+        border: 3px solid var(--black);
+        border-radius: 14px;
+        background: var(--white);
+        box-shadow: 4px 4px 0px var(--black);
+      }
+
+      .spectator-votes li.correct {
+        background: #d9ffb6;
+      }
+
+      .spectator-votes li.placeholder,
+      .reward-winners li.placeholder {
+        background: #f4f4f4;
+        color: #666;
+      }
+
+      .spectator-vote-name {
+        display: block;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .spectator-vote-pick {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .spectator-prize-board {
+        margin-top: 20px;
+        padding: 16px;
+        border: 4px solid var(--black);
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--brand-yellow) 0%, #fff3bf 100%);
+        box-shadow: 6px 6px 0px var(--black);
+      }
+
+      .spectator-prize-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        background: var(--brand);
+        color: var(--white);
+        border: 3px solid var(--black);
+        border-radius: 999px;
+        box-shadow: 3px 3px 0px var(--black);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .spectator-prize-title {
+        margin: 12px 0 8px;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.04em;
+      }
+
+      .spectator-prize-note {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .reward-winners li {
+        background: #fffef8;
+        animation: spectatorDropIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: calc(var(--order, 0) * 90ms);
+      }
+
+      .reward-winner-name {
+        display: block;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .reward-winner-tag {
+        display: inline-flex;
+        margin-top: 8px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: var(--brand-green);
+        border: 2px solid var(--black);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
       }
 
       .admin-delete {
@@ -779,6 +957,17 @@
         to { transform: rotate(360deg); }
       }
 
+      @keyframes spectatorDropIn {
+        from {
+          opacity: 0;
+          transform: translateY(18px) rotate(1deg) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) rotate(0deg) scale(1);
+        }
+      }
+
       @media (max-width: 1080px) {
         .content {
           grid-template-columns: 1fr;
@@ -792,6 +981,8 @@
         .brand-wordmark { font-size: 28px; height: 52px; padding: 0 16px; border-radius: 12px; }
         .event-summary strong { font-size: 20px; }
         .panel h2 { font-size: 24px; }
+        .spectator-title { font-size: 24px; }
+        .spectator-prize-title { font-size: 22px; }
         .player-profile-card { width: calc(100vw - 24px); padding: 16px; transform: translate3d(0, 12px, 0) scale(0.97); }
         .player-profile-name { font-size: 24px; }
       }
@@ -860,6 +1051,33 @@
             </label>
             <button type="submit" id="addButton">Add Participant</button>
           </form>
+
+          <section class="spectator-lounge" aria-labelledby="spectatorTitle">
+            <div class="spectator-head">
+              <p class="spectator-eyebrow">Spectator Prize Pick</p>
+              <h3 class="spectator-title" id="spectatorTitle">Back Your Champion</h3>
+              <p class="spectator-note" id="spectatorVoteStatus">Audience predictions open before the first result is locked.</p>
+            </div>
+            <form id="spectatorForm" class="spectator-form">
+              <label>
+                <span>Spectator Name</span>
+                <input id="spectatorName" name="spectatorName" type="text" placeholder="e.g. Jamie" required />
+              </label>
+              <label>
+                <span>Champion Pick</span>
+                <select id="spectatorPick" name="spectatorPick" required></select>
+              </label>
+              <button type="submit" id="spectatorVoteButton">Lock Prediction</button>
+            </form>
+            <p class="spectator-count" id="spectatorCountText">Predictions: 0</p>
+            <ul class="spectator-votes" id="spectatorVoteList"></ul>
+            <div class="spectator-prize-board hidden" id="spectatorPrizeBoard">
+              <span class="spectator-prize-badge">Prize Drop</span>
+              <h3 class="spectator-prize-title" id="spectatorPrizeTitle">Champion Callers</h3>
+              <p class="spectator-prize-note" id="spectatorPrizeNote">Winning spectators will show up here once the champion is locked.</p>
+              <ul class="reward-winners" id="spectatorWinnerList"></ul>
+            </div>
+          </section>
 
           <p class="small" id="countText">Entries: 0 / 16</p>
 
@@ -942,6 +1160,17 @@
       const nameInput = document.getElementById('name');
       const auraInput = document.getElementById('aura');
       const weakInput = document.getElementById('weak');
+      const spectatorForm = document.getElementById('spectatorForm');
+      const spectatorNameInput = document.getElementById('spectatorName');
+      const spectatorPickSelect = document.getElementById('spectatorPick');
+      const spectatorVoteButton = document.getElementById('spectatorVoteButton');
+      const spectatorVoteStatus = document.getElementById('spectatorVoteStatus');
+      const spectatorCountText = document.getElementById('spectatorCountText');
+      const spectatorVoteList = document.getElementById('spectatorVoteList');
+      const spectatorPrizeBoard = document.getElementById('spectatorPrizeBoard');
+      const spectatorPrizeTitle = document.getElementById('spectatorPrizeTitle');
+      const spectatorPrizeNote = document.getElementById('spectatorPrizeNote');
+      const spectatorWinnerList = document.getElementById('spectatorWinnerList');
       const userPanel = document.getElementById('userPanel');
       const adminPanel = document.getElementById('adminPanel');
       const userTab = document.getElementById('userTab');
@@ -990,11 +1219,13 @@
       const BOTTOM_PADDING = 48;
 
       const players = [];
+      const spectatorVotes = [];
       let app;
       let db;
       let eventId = '';
       let eventRef;
       let participantsRef;
+      let spectatorVotesRef;
       let isFirebaseAvailable = true;
       let rosterOrder = [];
       let isRosterFinalized = false;
@@ -1266,9 +1497,260 @@
         return item;
       }
 
+      function createLocalSpectatorVoteId() {
+        return `local-vote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+
+      function normalizeSpectatorName(value) {
+        return value.trim().toLowerCase();
+      }
+
+      function getPlayerSelectionKey(player) {
+        if (!player) {
+          return '';
+        }
+
+        return player.id || `${player.name}|${player.aura}|${player.weak}`;
+      }
+
+      function getPlayerBySelectionKey(selectionKey) {
+        return players.find((player) => getPlayerSelectionKey(player) === selectionKey) || null;
+      }
+
+      function findSpectatorVoteByName(name) {
+        const normalizedName = normalizeSpectatorName(name);
+        return spectatorVotes.find((vote) => vote.normalizedName === normalizedName) || null;
+      }
+
+      function hasTournamentStarted() {
+        return Object.entries(matchWinners).some(([key, value]) => /^\d+-/.test(key) && value !== undefined);
+      }
+
+      function isSpectatorVotingOpen() {
+        return players.length >= 2 && !hasTournamentStarted();
+      }
+
+      function getChampionEntrant() {
+        const championIndex = matchWinners['4-0'];
+        if (championIndex === undefined) {
+          return null;
+        }
+
+        const entrants = [...getBracketEntrants()];
+        while (entrants.length < MAX_PLAYERS) {
+          entrants.push({ empty: true });
+        }
+
+        const champion = entrants[championIndex];
+        return champion && !champion.empty ? champion : null;
+      }
+
+      function getSpectatorPrizeWinners() {
+        const champion = getChampionEntrant();
+        if (!champion) {
+          return [];
+        }
+
+        const championKey = getPlayerSelectionKey(champion);
+        return spectatorVotes.filter((vote) => vote.pickKey === championKey);
+      }
+
+      function renderSpectatorPickOptions() {
+        const currentValue = spectatorPickSelect.value;
+        const activePlayers = players.filter((player) => !player.empty);
+        spectatorPickSelect.innerHTML = '';
+
+        if (!activePlayers.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = 'Add participants first';
+          spectatorPickSelect.appendChild(option);
+          spectatorPickSelect.value = '';
+          return;
+        }
+
+        activePlayers.forEach((player) => {
+          const option = document.createElement('option');
+          option.value = getPlayerSelectionKey(player);
+          option.textContent = player.name;
+          spectatorPickSelect.appendChild(option);
+        });
+
+        const hasCurrentValue = activePlayers.some((player) => getPlayerSelectionKey(player) === currentValue);
+        spectatorPickSelect.value = hasCurrentValue ? currentValue : getPlayerSelectionKey(activePlayers[0]);
+      }
+
+      function renderSpectatorSection() {
+        renderSpectatorPickOptions();
+
+        const votingOpen = isSpectatorVotingOpen();
+        const hasEnoughPlayers = players.length >= 2;
+        const champion = getChampionEntrant();
+        const championKey = champion ? getPlayerSelectionKey(champion) : '';
+        const prizeWinners = getSpectatorPrizeWinners();
+
+        spectatorNameInput.disabled = !votingOpen;
+        spectatorPickSelect.disabled = !votingOpen || !hasEnoughPlayers;
+        spectatorVoteButton.disabled = !votingOpen || !hasEnoughPlayers;
+        spectatorVoteButton.textContent = votingOpen ? 'Lock Prediction' : 'Predictions Locked';
+
+        if (!hasEnoughPlayers) {
+          spectatorVoteStatus.textContent = 'Need at least 2 participants before audience predictions open.';
+        } else if (votingOpen) {
+          spectatorVoteStatus.textContent = 'Audience predictions stay open until the first match result is locked.';
+        } else if (champion) {
+          spectatorVoteStatus.textContent = 'Predictions are locked. The champion is in, and the audience prize board is live.';
+        } else {
+          spectatorVoteStatus.textContent = 'Predictions are locked. The tournament is already underway.';
+        }
+
+        spectatorCountText.textContent = `Predictions: ${spectatorVotes.length}`;
+        spectatorVoteList.innerHTML = '';
+
+        if (!spectatorVotes.length) {
+          const emptyItem = document.createElement('li');
+          emptyItem.className = 'placeholder';
+          emptyItem.textContent = 'No spectator picks yet. Be the first one to call the champion.';
+          spectatorVoteList.appendChild(emptyItem);
+        } else {
+          spectatorVotes.forEach((vote) => {
+            const item = document.createElement('li');
+            if (championKey && vote.pickKey === championKey) {
+              item.classList.add('correct');
+            }
+
+            const name = document.createElement('span');
+            name.className = 'spectator-vote-name';
+            name.textContent = vote.name;
+            item.appendChild(name);
+
+            const pick = document.createElement('span');
+            pick.className = 'spectator-vote-pick';
+            pick.textContent = `Picked ${vote.pickName}`;
+            item.appendChild(pick);
+
+            spectatorVoteList.appendChild(item);
+          });
+        }
+
+        spectatorPrizeBoard.classList.toggle('hidden', !champion);
+        spectatorWinnerList.innerHTML = '';
+
+        if (!champion) {
+          spectatorPrizeTitle.textContent = 'Champion Callers';
+          spectatorPrizeNote.textContent = 'Winning spectators will show up here once the champion is locked.';
+          return;
+        }
+
+        spectatorPrizeTitle.textContent = `${champion.name} Was The Call`;
+        if (!prizeWinners.length) {
+          spectatorPrizeNote.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
+          const emptyWinner = document.createElement('li');
+          emptyWinner.className = 'placeholder';
+          emptyWinner.textContent = 'No correct predictions this round.';
+          spectatorWinnerList.appendChild(emptyWinner);
+          return;
+        }
+
+        spectatorPrizeNote.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
+        prizeWinners.forEach((winner, index) => {
+          const item = document.createElement('li');
+          item.style.setProperty('--order', String(index));
+
+          const name = document.createElement('span');
+          name.className = 'reward-winner-name';
+          name.textContent = winner.name;
+          item.appendChild(name);
+
+          const tag = document.createElement('span');
+          tag.className = 'reward-winner-tag';
+          tag.textContent = 'Prize eligible';
+          item.appendChild(tag);
+
+          spectatorWinnerList.appendChild(item);
+        });
+      }
+
+      function upsertLocalSpectatorVote(votePayload) {
+        const existingIndex = spectatorVotes.findIndex((vote) => vote.normalizedName === votePayload.normalizedName);
+        if (existingIndex >= 0) {
+          const existingVote = spectatorVotes[existingIndex];
+          spectatorVotes.splice(existingIndex, 1, {
+            ...existingVote,
+            ...votePayload,
+            updatedAt: Date.now(),
+          });
+          return true;
+        }
+
+        spectatorVotes.push({
+          id: createLocalSpectatorVoteId(),
+          ...votePayload,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        return false;
+      }
+
+      async function handleSpectatorVoteSubmit(event) {
+        event.preventDefault();
+
+        if (!isSpectatorVotingOpen()) {
+          renderSpectatorSection();
+          return;
+        }
+
+        const spectatorName = spectatorNameInput.value.trim();
+        const pickedPlayer = getPlayerBySelectionKey(spectatorPickSelect.value);
+        if (!spectatorName || !pickedPlayer) {
+          spectatorVoteStatus.textContent = 'Please enter a spectator name and choose a champion pick.';
+          return;
+        }
+
+        const votePayload = {
+          name: spectatorName,
+          normalizedName: normalizeSpectatorName(spectatorName),
+          pickKey: getPlayerSelectionKey(pickedPlayer),
+          pickName: pickedPlayer.name,
+        };
+        const existingVote = findSpectatorVoteByName(spectatorName);
+
+        try {
+          if (!isFirebaseAvailable || !spectatorVotesRef) {
+            const updatedExistingVote = upsertLocalSpectatorVote(votePayload);
+            persistLocalEventState();
+            spectatorForm.reset();
+            renderSpectatorSection();
+            spectatorVoteStatus.textContent = updatedExistingVote ? 'Prediction updated.' : 'Prediction locked in.';
+            return;
+          }
+
+          if (existingVote?.id) {
+            await update(ref(spectatorVotesRef, existingVote.id), {
+              ...votePayload,
+              updatedAt: serverTimestamp(),
+            });
+          } else {
+            await set(push(spectatorVotesRef), {
+              ...votePayload,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          }
+
+          spectatorForm.reset();
+          renderSpectatorSection();
+          spectatorVoteStatus.textContent = existingVote ? 'Prediction updated.' : 'Prediction locked in.';
+        } catch (error) {
+          console.error(error);
+          spectatorVoteStatus.textContent = 'Unable to save your prediction right now. Please try again.';
+        }
+      }
+
       function bindEventRefs() {
         eventRef = ref(db, `events/${eventId}`);
         participantsRef = ref(db, `events/${eventId}/participants`);
+        spectatorVotesRef = ref(db, `events/${eventId}/spectatorVotes`);
       }
 
       async function ensureEventDocument() {
@@ -1353,6 +1835,11 @@
           if (state.matchWinners && typeof state.matchWinners === 'object') {
             matchWinners = state.matchWinners;
           }
+
+          if (Array.isArray(state.spectatorVotes)) {
+            spectatorVotes.length = 0;
+            state.spectatorVotes.forEach((vote) => spectatorVotes.push(vote));
+          }
         } catch (error) {
           console.error(error);
         }
@@ -1365,6 +1852,7 @@
 
         const state = {
           players,
+          spectatorVotes,
           rosterOrder,
           isRosterFinalized,
           matchWinners,
@@ -1582,8 +2070,7 @@
         return [getMatchLoserIndex(3, 0), getMatchLoserIndex(3, 1)];
       }
 
-      function getFourthPlaceIndex() {
-        const thirdPlaceWinner = matchWinners[THIRD_PLACE_KEY];
+      function getFourthPlaceIndex(thirdPlaceWinner = matchWinners[THIRD_PLACE_KEY]) {
         if (thirdPlaceWinner === undefined) {
           return undefined;
         }
@@ -1598,7 +2085,8 @@
         }
       }
 
-      function drawPlacementPanel(x, y, width, height) {
+      function drawPlacementPanel(x, y, width, height, options = {}) {
+        const { playoffReady = false, canControl = false } = options;
         const panel = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         panel.setAttribute('x', x);
         panel.setAttribute('y', y);
@@ -1619,14 +2107,18 @@
         noteTop.setAttribute('x', x + 24);
         noteTop.setAttribute('y', y + 68);
         noteTop.setAttribute('class', 'placement-panel-note');
-        noteTop.textContent = 'SEMIFINAL LOSERS DROP HERE.';
+        noteTop.textContent = playoffReady
+          ? 'SEMIFINAL LOSERS DROP HERE.'
+          : 'OPENS ONCE BOTH SEMIFINALS ARE LOCKED.';
         edgesLayer.appendChild(noteTop);
 
         const noteBottom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         noteBottom.setAttribute('x', x + 24);
         noteBottom.setAttribute('y', y + 88);
         noteBottom.setAttribute('class', 'placement-panel-note');
-        noteBottom.textContent = 'CLICK A PLAYER TO LOCK 3RD PLACE.';
+        noteBottom.textContent = playoffReady
+          ? (canControl ? 'CLICK A PLAYER TO LOCK 3RD PLACE.' : 'ADMIN LOCKS 3RD PLACE FROM THIS PANEL.')
+          : 'LOSERS AUTO-DROP IN AS THE SEMIS FINISH.';
         edgesLayer.appendChild(noteBottom);
       }
 
@@ -1995,7 +2487,11 @@
 
         const slotSpacing = NODE_WIDTH + SLOT_GAP;
         const baseSvgWidth = X_PADDING * 2 + slotSpacing * (MAX_PLAYERS - 1);
-        const svgWidth = baseSvgWidth + THIRD_PLACE_PANEL_GAP + THIRD_PLACE_PANEL_WIDTH;
+        const previewThirdPlaceEntrants = getThirdPlaceEntrantIndexes();
+        const showThirdPlacePanel = [0, 1].some((matchIndex) => getMatchParticipantIndexes(3, matchIndex).length === 2)
+          || previewThirdPlaceEntrants.some((entrantIndex) => entrantIndex !== undefined)
+          || matchWinners[THIRD_PLACE_KEY] !== undefined;
+        const svgWidth = baseSvgWidth + (showThirdPlacePanel ? THIRD_PLACE_PANEL_GAP + THIRD_PLACE_PANEL_WIDTH : 0);
         const svgHeight = TOP_PADDING + ROW_GAP * (totalLevels - 1) + BOTTOM_PADDING;
         const yBottom = TOP_PADDING + ROW_GAP * (totalLevels - 1);
 
@@ -2151,89 +2647,97 @@
           });
         });
 
-        const thirdPlacePanelX = baseSvgWidth + THIRD_PLACE_PANEL_GAP;
-        const thirdPlacePanelY = TOP_PADDING + 12;
-        const thirdPlacePanelHeight = svgHeight - thirdPlacePanelY - (BOTTOM_PADDING - 8);
-        const thirdPlaceCenterX = thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH / 2;
-        const thirdPlaceWinnerNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 128 };
-        const thirdPlaceLoserNodes = [
-          { x: thirdPlacePanelX + 106, y: thirdPlacePanelY + 286 },
-          { x: thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH - 106, y: thirdPlacePanelY + 286 },
-        ];
-        const fourthPlaceNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 418 };
-        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes();
-        const thirdPlaceWinnerIdx = matchWinners[THIRD_PLACE_KEY];
-        const fourthPlaceIdx = getFourthPlaceIndex();
-        const playoffReady = thirdPlaceEntrants.every((entrantIndex) => entrantIndex !== undefined);
+        if (showThirdPlacePanel) {
+          const thirdPlacePanelX = baseSvgWidth + THIRD_PLACE_PANEL_GAP;
+          const thirdPlacePanelY = TOP_PADDING + 12;
+          const thirdPlacePanelHeight = svgHeight - thirdPlacePanelY - (BOTTOM_PADDING - 8);
+          const thirdPlaceCenterX = thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH / 2;
+          const thirdPlaceWinnerNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 128 };
+          const thirdPlaceLoserNodes = [
+            { x: thirdPlacePanelX + 106, y: thirdPlacePanelY + 286 },
+            { x: thirdPlacePanelX + THIRD_PLACE_PANEL_WIDTH - 106, y: thirdPlacePanelY + 286 },
+          ];
+          const fourthPlaceNode = { x: thirdPlaceCenterX, y: thirdPlacePanelY + 418 };
+          const thirdPlaceEntrants = previewThirdPlaceEntrants;
+          const playoffReady = thirdPlaceEntrants.every((entrantIndex) => entrantIndex !== undefined);
+          const rawThirdPlaceWinnerIdx = matchWinners[THIRD_PLACE_KEY];
+          const thirdPlaceWinnerIdx = thirdPlaceEntrants.includes(rawThirdPlaceWinnerIdx) ? rawThirdPlaceWinnerIdx : undefined;
+          const fourthPlaceIdx = getFourthPlaceIndex(thirdPlaceWinnerIdx);
 
-        drawPlacementPanel(
-          thirdPlacePanelX,
-          thirdPlacePanelY,
-          THIRD_PLACE_PANEL_WIDTH,
-          thirdPlacePanelHeight,
-        );
-
-        thirdPlaceLoserNodes.forEach((childNode) => {
-          drawConnector(childNode, thirdPlaceWinnerNode, 'placement-line');
-        });
-
-        thirdPlaceLoserNodes.forEach((childNode, idx) => {
-          const entrantIndex = thirdPlaceEntrants[idx];
-          const player = entrantIndex !== undefined ? entrants[entrantIndex] : null;
-          const isWinnerNode = thirdPlaceWinnerIdx !== undefined && thirdPlaceWinnerIdx === entrantIndex;
-          const isLoserNode = thirdPlaceWinnerIdx !== undefined && entrantIndex !== undefined && thirdPlaceWinnerIdx !== entrantIndex;
-          const canSelectThirdPlace = canControl && playoffReady && entrantIndex !== undefined && player && !player.empty;
-
-          makeNode(
-            childNode.x,
-            childNode.y,
-            player && !player.empty ? shortenPlayerName(player.name, 12) : 'Semifinal loser',
-            entrantIndex !== undefined ? `Semi ${idx + 1} loser` : 'Pending semifinal',
-            false,
-            entrantIndex === undefined,
-            {
-              clickable: canSelectThirdPlace,
-              isWinner: isWinnerNode,
-              isLoser: isLoserNode,
-              onClick: canSelectThirdPlace
-                ? (event) => selectThirdPlaceWinner(entrantIndex, event.clientX, event.clientY)
-                : null,
-              profileData: makeProfileCardData(player, `Semifinal ${idx + 1} Loser`),
-            },
+          drawPlacementPanel(
+            thirdPlacePanelX,
+            thirdPlacePanelY,
+            THIRD_PLACE_PANEL_WIDTH,
+            thirdPlacePanelHeight,
+            { playoffReady, canControl },
           );
-        });
 
-        {
-          const player = thirdPlaceWinnerIdx !== undefined ? entrants[thirdPlaceWinnerIdx] : null;
-          makeNode(
-            thirdPlaceWinnerNode.x,
-            thirdPlaceWinnerNode.y,
-            player && !player.empty ? shortenPlayerName(player.name, 12) : '3rd Place',
-            thirdPlaceWinnerIdx !== undefined ? '3rd Place Winner' : playoffReady ? 'Playoff pending' : 'Waiting for semifinals',
-            false,
-            thirdPlaceWinnerIdx === undefined,
-            {
-              profileData: makeProfileCardData(player, '3rd Place'),
-              extraClasses: ['node-third-place'],
-            },
-          );
+          thirdPlaceLoserNodes.forEach((childNode) => {
+            drawConnector(childNode, thirdPlaceWinnerNode, 'placement-line');
+          });
+
+          thirdPlaceLoserNodes.forEach((childNode, idx) => {
+            const entrantIndex = thirdPlaceEntrants[idx];
+            const player = entrantIndex !== undefined ? entrants[entrantIndex] : null;
+            const isWinnerNode = thirdPlaceWinnerIdx !== undefined && thirdPlaceWinnerIdx === entrantIndex;
+            const isLoserNode = thirdPlaceWinnerIdx !== undefined && entrantIndex !== undefined && thirdPlaceWinnerIdx !== entrantIndex;
+            const canSelectThirdPlace = Boolean(
+              canControl && playoffReady && entrantIndex !== undefined && player && !player.empty,
+            );
+
+            makeNode(
+              childNode.x,
+              childNode.y,
+              player && !player.empty ? shortenPlayerName(player.name, 12) : 'Semifinal loser',
+              entrantIndex !== undefined ? `Semi ${idx + 1} loser` : 'Pending semifinal',
+              false,
+              entrantIndex === undefined,
+              {
+                clickable: canSelectThirdPlace,
+                isWinner: isWinnerNode,
+                isLoser: isLoserNode,
+                onClick: canSelectThirdPlace
+                  ? (event) => selectThirdPlaceWinner(entrantIndex, event.clientX, event.clientY)
+                  : null,
+                profileData: makeProfileCardData(player, `Semifinal ${idx + 1} Loser`),
+              },
+            );
+          });
+
+          {
+            const player = thirdPlaceWinnerIdx !== undefined ? entrants[thirdPlaceWinnerIdx] : null;
+            makeNode(
+              thirdPlaceWinnerNode.x,
+              thirdPlaceWinnerNode.y,
+              player && !player.empty ? shortenPlayerName(player.name, 12) : '3rd Place',
+              thirdPlaceWinnerIdx !== undefined ? '3rd Place Winner' : playoffReady ? 'Playoff pending' : 'Waiting for semifinals',
+              false,
+              thirdPlaceWinnerIdx === undefined,
+              {
+                profileData: makeProfileCardData(player, '3rd Place'),
+                extraClasses: ['node-third-place'],
+              },
+            );
+          }
+
+          {
+            const player = fourthPlaceIdx !== undefined ? entrants[fourthPlaceIdx] : null;
+            makeNode(
+              fourthPlaceNode.x,
+              fourthPlaceNode.y,
+              player && !player.empty ? shortenPlayerName(player.name, 12) : '4th Place',
+              fourthPlaceIdx !== undefined ? '3rd Place Playoff Loser' : playoffReady ? 'Decided after playoff' : 'Waiting for semifinals',
+              false,
+              fourthPlaceIdx === undefined,
+              {
+                profileData: makeProfileCardData(player, '4th Place'),
+                extraClasses: ['node-fourth-place'],
+              },
+            );
+          }
         }
 
-        {
-          const player = fourthPlaceIdx !== undefined ? entrants[fourthPlaceIdx] : null;
-          makeNode(
-            fourthPlaceNode.x,
-            fourthPlaceNode.y,
-            player && !player.empty ? shortenPlayerName(player.name, 12) : '4th Place',
-            fourthPlaceIdx !== undefined ? '3rd Place Playoff Loser' : playoffReady ? 'Decided after playoff' : 'Waiting for semifinals',
-            false,
-            fourthPlaceIdx === undefined,
-            {
-              profileData: makeProfileCardData(player, '4th Place'),
-              extraClasses: ['node-fourth-place'],
-            },
-          );
-        }
+        renderSpectatorSection();
       }
 
       function initializeEmptyEntriesFallback() {
@@ -2294,6 +2798,7 @@
 
         if (!isFirebaseAvailable || !participantsRef || !eventRef) {
           players.length = 0;
+          spectatorVotes.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
           matchWinners = {};
@@ -2307,6 +2812,9 @@
 
         try {
           await remove(participantsRef);
+          if (spectatorVotesRef) {
+            await remove(spectatorVotesRef);
+          }
           await update(eventRef, {
             rosterOrder: [],
             isRosterFinalized: false,
@@ -2347,6 +2855,7 @@
 
       function wireUiEventListeners() {
         form.addEventListener('submit', handleSubmit);
+        spectatorForm.addEventListener('submit', handleSpectatorVoteSubmit);
         clearButton.addEventListener('click', resetEventState);
         bracketShell.addEventListener('scroll', () => hideProfileCard(true), { passive: true });
         document.addEventListener('click', (event) => {
@@ -2432,6 +2941,27 @@
             console.error('[RK Events] Participants listener error:', error?.code, error?.message);
             shareStatus.textContent = 'Realtime sync error. Refreshing list from local input.';
             initializeEmptyEntriesFallback();
+          },
+        );
+
+        onValue(
+          query(spectatorVotesRef, orderByChild('createdAt')),
+          (snapshot) => {
+            spectatorVotes.length = 0;
+            snapshot.forEach((docItem) => {
+              spectatorVotes.push({
+                id: docItem.key,
+                ...docItem.val(),
+              });
+            });
+
+            persistLocalEventState();
+            renderSpectatorSection();
+          },
+          (error) => {
+            console.error('[RK Events] Spectator votes listener error:', error?.code, error?.message);
+            spectatorVoteStatus.textContent = 'Live prediction sync failed. Refresh to try again.';
+            renderSpectatorSection();
           },
         );
 

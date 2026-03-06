@@ -1932,8 +1932,28 @@
         return players.length >= MAX_PLAYERS;
       }
 
+      function shouldQueueNewSignup() {
+        return isRosterFinalized || isRosterFull();
+      }
+
       function shouldShowWaitlist() {
         return currentView === 'warriors' || currentView === 'admin';
+      }
+
+      function getSnapshotChildCount(snapshot) {
+        if (!snapshot?.exists()) {
+          return 0;
+        }
+
+        if (typeof snapshot.size === 'number') {
+          return snapshot.size;
+        }
+
+        let childCount = 0;
+        snapshot.forEach(() => {
+          childCount += 1;
+        });
+        return childCount;
       }
 
       async function seedTestPlayersIfNeeded() {
@@ -2777,6 +2797,7 @@
         });
 
         const entriesFull = isRosterFull();
+        const shouldQueueSignup = shouldQueueNewSignup();
         const waitlistCount = waitingPlayers.length;
 
         countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
@@ -2784,8 +2805,8 @@
           countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (full)`;
         }
 
-        addButton.disabled = isShufflingRoster || isRosterFinalized;
-        addButton.textContent = entriesFull ? 'Join Waitlist' : 'Add Participant';
+        addButton.disabled = isShufflingRoster;
+        addButton.textContent = shouldQueueSignup ? 'Join Waitlist' : 'Add Participant';
 
         const canControlRoster = canUseRosterControls();
         if (clearButton) {
@@ -2814,8 +2835,8 @@
           rosterStatus.textContent = `${players.length} of ${MAX_PLAYERS} slots filled. You can draw now or wait for more participants.`;
         } else if (isRosterFinalized) {
           rosterStatus.textContent = waitlistCount
-            ? `Roster is active. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} remain on the waitlist.`
-            : 'Roster is active. Click "Draw Roster" again to reshuffle.';
+            ? `Roster is active. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'remains' : 'remain'} on the waitlist.`
+            : 'Roster is active. New signups now go to the waitlist.';
         } else if (waitlistCount) {
           rosterStatus.textContent = `All ${MAX_PLAYERS} slots are filled. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'is' : 'are'} waiting for an opening.`;
         } else if (!isFirebaseAvailable) {
@@ -3663,13 +3684,17 @@
       }
 
       async function shouldQueueParticipantRemotely() {
+        if (shouldQueueNewSignup()) {
+          return true;
+        }
+
         if (!participantsRef) {
           return isRosterFull();
         }
 
         try {
           const snapshot = await get(participantsRef);
-          return snapshot.numChildren() >= MAX_PLAYERS;
+          return getSnapshotChildCount(snapshot) >= MAX_PLAYERS;
         } catch (error) {
           console.error('[RK Events] Failed to inspect participant count before signup:', error);
           return isRosterFull();
@@ -3782,7 +3807,7 @@
 
       async function handleSubmit(event) {
         event.preventDefault();
-        if (isShufflingRoster || isRosterFinalized) {
+        if (isShufflingRoster) {
           return;
         }
 
@@ -3795,7 +3820,7 @@
         form.reset();
 
         if (!isFirebaseAvailable || !participantsRef) {
-          const addToWaitlist = isRosterFull();
+          const addToWaitlist = shouldQueueNewSignup();
           if (addToWaitlist) {
             waitingPlayers.push(player);
           } else {

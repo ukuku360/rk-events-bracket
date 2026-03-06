@@ -1709,8 +1709,48 @@
       let isProfileCardPinned = false;
       let activeProfileCardKey = '';
       let firebaseRetryCount = 0;
+      let entriesPanelHeightFrame = 0;
       const FIREBASE_MAX_RETRIES = 3;
       const FIREBASE_RETRY_BASE_DELAY_MS = 3000;
+      const entriesPanelHeightObserver = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(() => queueEntriesPanelHeightSync())
+        : null;
+
+      function getEntriesReferencePanel() {
+        if (currentView === 'supporters' || currentView === 'admin') {
+          return spectatorPanelCard;
+        }
+
+        return registrationPanel;
+      }
+
+      function syncEntriesPanelHeight() {
+        if (!entriesPanel.isConnected) {
+          return;
+        }
+
+        const referencePanel = getEntriesReferencePanel();
+        if (!referencePanel || !referencePanel.isConnected || referencePanel.classList.contains('hidden')) {
+          entriesPanel.style.removeProperty('height');
+          return;
+        }
+
+        const nextHeight = Math.round(referencePanel.getBoundingClientRect().height);
+        if (!nextHeight) {
+          entriesPanel.style.removeProperty('height');
+          return;
+        }
+
+        entriesPanel.style.height = `${nextHeight}px`;
+      }
+
+      function queueEntriesPanelHeightSync() {
+        cancelAnimationFrame(entriesPanelHeightFrame);
+        entriesPanelHeightFrame = requestAnimationFrame(() => {
+          entriesPanelHeightFrame = 0;
+          syncEntriesPanelHeight();
+        });
+      }
 
       async function copyToClipboard(value) {
         if (!navigator.clipboard || !window.isSecureContext) {
@@ -1943,6 +1983,7 @@
         applyTabState(supportersTab, showingSupporters);
         applyTabState(adminTab, showingAdmin);
         mountSharedSectionsForCurrentView();
+        queueEntriesPanelHeightSync();
       }
 
       function syncAdminControls() {
@@ -2322,95 +2363,99 @@
       }
 
       function renderSpectatorSection() {
-        renderSpectatorPickOptions();
+        try {
+          renderSpectatorPickOptions();
 
-        const votingOpen = isSpectatorVotingOpen();
-        const hasEnoughPlayers = players.length >= 2;
-        const champion = getChampionEntrant();
-        const championKey = champion ? getPlayerSelectionKey(champion) : '';
-        const prizeWinners = getSpectatorPrizeWinners();
+          const votingOpen = isSpectatorVotingOpen();
+          const hasEnoughPlayers = players.length >= 2;
+          const champion = getChampionEntrant();
+          const championKey = champion ? getPlayerSelectionKey(champion) : '';
+          const prizeWinners = getSpectatorPrizeWinners();
 
-        spectatorNameInput.disabled = !votingOpen;
-        spectatorPickSelect.disabled = !votingOpen || !hasEnoughPlayers;
-        spectatorVoteButton.disabled = !votingOpen || !hasEnoughPlayers;
-        spectatorVoteButton.textContent = votingOpen ? 'Lock Prediction' : 'Predictions Locked';
+          spectatorNameInput.disabled = !votingOpen;
+          spectatorPickSelect.disabled = !votingOpen || !hasEnoughPlayers;
+          spectatorVoteButton.disabled = !votingOpen || !hasEnoughPlayers;
+          spectatorVoteButton.textContent = votingOpen ? 'Lock Prediction' : 'Predictions Locked';
 
-        if (!hasEnoughPlayers) {
-          spectatorVoteStatus.textContent = 'Need at least 2 participants before audience predictions open.';
-        } else if (votingOpen) {
-          spectatorVoteStatus.textContent = 'Audience predictions stay open until the first match result is locked.';
-        } else if (champion) {
-          spectatorVoteStatus.textContent = 'Predictions are locked. The champion is in, and the audience prize board is live.';
-        } else {
-          spectatorVoteStatus.textContent = 'Predictions are locked. The tournament is already underway.';
-        }
+          if (!hasEnoughPlayers) {
+            spectatorVoteStatus.textContent = 'Need at least 2 participants before audience predictions open.';
+          } else if (votingOpen) {
+            spectatorVoteStatus.textContent = 'Audience predictions stay open until the first match result is locked.';
+          } else if (champion) {
+            spectatorVoteStatus.textContent = 'Predictions are locked. The champion is in, and the audience prize board is live.';
+          } else {
+            spectatorVoteStatus.textContent = 'Predictions are locked. The tournament is already underway.';
+          }
 
-        spectatorCountText.textContent = `Predictions: ${spectatorVotes.length}`;
-        renderSpectatorInsights();
-        spectatorVoteList.innerHTML = '';
+          spectatorCountText.textContent = `Predictions: ${spectatorVotes.length}`;
+          renderSpectatorInsights();
+          spectatorVoteList.innerHTML = '';
 
-        if (!spectatorVotes.length) {
-          const emptyItem = document.createElement('li');
-          emptyItem.className = 'placeholder';
-          emptyItem.textContent = 'No spectator picks yet. Be the first one to call the champion.';
-          spectatorVoteList.appendChild(emptyItem);
-        } else {
-          spectatorVotes.forEach((vote) => {
+          if (!spectatorVotes.length) {
+            const emptyItem = document.createElement('li');
+            emptyItem.className = 'placeholder';
+            emptyItem.textContent = 'No spectator picks yet. Be the first one to call the champion.';
+            spectatorVoteList.appendChild(emptyItem);
+          } else {
+            spectatorVotes.forEach((vote) => {
+              const item = document.createElement('li');
+              if (championKey && vote.pickKey === championKey) {
+                item.classList.add('correct');
+              }
+
+              const name = document.createElement('span');
+              name.className = 'spectator-vote-name';
+              name.textContent = vote.name;
+              item.appendChild(name);
+
+              const pick = document.createElement('span');
+              pick.className = 'spectator-vote-pick';
+              pick.textContent = `Picked ${vote.pickName}`;
+              item.appendChild(pick);
+
+              spectatorVoteList.appendChild(item);
+            });
+          }
+
+          spectatorPrizeBoard.classList.toggle('hidden', !champion);
+          spectatorWinnerList.innerHTML = '';
+
+          if (!champion) {
+            spectatorPrizeTitle.textContent = 'Champion Callers';
+            spectatorPrizeNote.textContent = 'Winning spectators will show up here once the champion is locked.';
+            return;
+          }
+
+          spectatorPrizeTitle.textContent = `${champion.name} Was The Call`;
+          if (!prizeWinners.length) {
+            spectatorPrizeNote.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
+            const emptyWinner = document.createElement('li');
+            emptyWinner.className = 'placeholder';
+            emptyWinner.textContent = 'No correct predictions this round.';
+            spectatorWinnerList.appendChild(emptyWinner);
+            return;
+          }
+
+          spectatorPrizeNote.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
+          prizeWinners.forEach((winner, index) => {
             const item = document.createElement('li');
-            if (championKey && vote.pickKey === championKey) {
-              item.classList.add('correct');
-            }
+            item.style.setProperty('--order', String(index));
 
             const name = document.createElement('span');
-            name.className = 'spectator-vote-name';
-            name.textContent = vote.name;
+            name.className = 'reward-winner-name';
+            name.textContent = winner.name;
             item.appendChild(name);
 
-            const pick = document.createElement('span');
-            pick.className = 'spectator-vote-pick';
-            pick.textContent = `Picked ${vote.pickName}`;
-            item.appendChild(pick);
+            const tag = document.createElement('span');
+            tag.className = 'reward-winner-tag';
+            tag.textContent = 'Prize eligible';
+            item.appendChild(tag);
 
-            spectatorVoteList.appendChild(item);
+            spectatorWinnerList.appendChild(item);
           });
+        } finally {
+          queueEntriesPanelHeightSync();
         }
-
-        spectatorPrizeBoard.classList.toggle('hidden', !champion);
-        spectatorWinnerList.innerHTML = '';
-
-        if (!champion) {
-          spectatorPrizeTitle.textContent = 'Champion Callers';
-          spectatorPrizeNote.textContent = 'Winning spectators will show up here once the champion is locked.';
-          return;
-        }
-
-        spectatorPrizeTitle.textContent = `${champion.name} Was The Call`;
-        if (!prizeWinners.length) {
-          spectatorPrizeNote.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
-          const emptyWinner = document.createElement('li');
-          emptyWinner.className = 'placeholder';
-          emptyWinner.textContent = 'No correct predictions this round.';
-          spectatorWinnerList.appendChild(emptyWinner);
-          return;
-        }
-
-        spectatorPrizeNote.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
-        prizeWinners.forEach((winner, index) => {
-          const item = document.createElement('li');
-          item.style.setProperty('--order', String(index));
-
-          const name = document.createElement('span');
-          name.className = 'reward-winner-name';
-          name.textContent = winner.name;
-          item.appendChild(name);
-
-          const tag = document.createElement('span');
-          tag.className = 'reward-winner-tag';
-          tag.textContent = 'Prize eligible';
-          item.appendChild(tag);
-
-          spectatorWinnerList.appendChild(item);
-        });
       }
 
       function upsertLocalSpectatorVote(votePayload) {
@@ -2664,6 +2709,8 @@
         } else {
           rosterStatus.textContent = 'All participants are in. Click "Draw Roster" to shuffle bracket.';
         }
+
+        queueEntriesPanelHeightSync();
       }
 
       function setRosterShuffleMode(enabled) {
@@ -3647,7 +3694,10 @@
       }
 
       function wireGlobalShortcuts() {
-        window.addEventListener('resize', () => hideProfileCard(true));
+        window.addEventListener('resize', () => {
+          hideProfileCard(true);
+          queueEntriesPanelHeightSync();
+        });
         window.addEventListener('keydown', (event) => {
           if (event.key === 'Escape' && isSpectatorInsightsExpanded) {
             closeSpectatorInsightsModal();
@@ -3934,6 +3984,11 @@
         }
       }
 
+      if (entriesPanelHeightObserver) {
+        entriesPanelHeightObserver.observe(registrationPanel);
+        entriesPanelHeightObserver.observe(spectatorPanelCard);
+      }
+
       initializeProject();
       wireUiEventListeners();
       setBracketFocusMode(document.body.classList.contains('bracket-focus'));
@@ -3942,6 +3997,7 @@
       if (document.fonts?.ready) {
         document.fonts.ready.then(() => {
           renderBracket();
+          queueEntriesPanelHeightSync();
         });
       }
     </script>

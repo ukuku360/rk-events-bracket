@@ -245,11 +245,41 @@
         padding: 18px;
       }
 
-      .user-panel-grid {
+      .view-column {
+        display: grid;
+        gap: 24px;
+        align-content: start;
+        min-width: 0;
+      }
+
+      .view-panel {
+        min-width: 0;
+      }
+
+      .view-slot-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 24px;
         align-content: start;
+      }
+
+      .warriors-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .supporters-layout,
+      .admin-slot-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .admin-view {
+        display: grid;
+        gap: 24px;
+        align-content: start;
+      }
+
+      .admin-control-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f2f2f2 100%);
       }
 
       .user-card {
@@ -411,35 +441,7 @@
         text-align: right;
       }
 
-      .spectator-insights-admin {
-        margin-top: 16px;
-        display: grid;
-        gap: 12px;
-        padding: 14px;
-        border: 3px dashed var(--black);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.72);
-      }
-
-      .spectator-insights-admin-note {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 800;
-        line-height: 1.45;
-      }
-
-      .spectator-insights-publish,
       .spectator-insights-toggle {
-        width: 100%;
-      }
-
-      .spectator-insights-publish {
-        background: var(--black);
-        color: var(--brand-yellow);
-      }
-
-      .spectator-insights-toggle {
-        margin-top: 16px;
         background: linear-gradient(135deg, #121212 0%, #3c1f7a 100%);
         color: var(--white);
       }
@@ -472,14 +474,16 @@
         z-index: 10011;
       }
 
+      .spectator-insights-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 18px;
+      }
+
       .spectator-insights-close {
-        position: absolute;
-        top: 18px;
-        right: 18px;
         padding: 10px 14px;
         background: var(--brand-yellow);
         color: var(--black);
-        z-index: 1;
       }
 
       .spectator-insights-headline {
@@ -488,7 +492,6 @@
         justify-content: space-between;
         gap: 16px;
         margin-bottom: 18px;
-        padding-right: 140px;
         flex-wrap: wrap;
       }
 
@@ -1325,7 +1328,8 @@
           grid-template-columns: minmax(420px, 460px) minmax(0, 1fr);
         }
 
-        .user-panel-grid {
+        .supporters-layout,
+        .admin-slot-grid {
           grid-template-columns: 1fr;
         }
 
@@ -1370,14 +1374,8 @@
           padding: 18px;
         }
 
-        .spectator-insights-headline {
-          padding-right: 0;
-        }
-
         .spectator-insights-close {
-          position: static;
-          margin-bottom: 14px;
-          width: 100%;
+          width: auto;
         }
       }
 
@@ -1423,7 +1421,8 @@
         <h1>Swanston Table Tennis Tournament</h1>
         <p class="subtitle">Single-elimination bracket (16 entrants). Player slots are displayed at the bottom and the champion position is connected upward.</p>
         <div class="mode-switch" role="tablist" aria-label="View mode">
-          <button type="button" id="userTab" class="mode-tab active" role="tab" aria-pressed="true" aria-controls="userPanel" data-view="user">Participant View</button>
+          <button type="button" id="warriorsTab" class="mode-tab active" role="tab" aria-pressed="true" aria-controls="warriorsPanel" data-view="warriors">Warriors</button>
+          <button type="button" id="supportersTab" class="mode-tab" role="tab" aria-pressed="false" aria-controls="supportersPanel" data-view="supporters">Supporters</button>
           <button type="button" id="adminTab" class="mode-tab" role="tab" aria-pressed="false" aria-controls="adminPanel" data-view="admin">Admin</button>
         </div>
         <div class="hero-cta">
@@ -1441,8 +1440,28 @@
       </div>
 
       <div class="content">
-        <div class="view-panel user-panel-grid" id="userPanel" role="tabpanel" aria-labelledby="userTab">
-          <section class="panel user-card registration-panel">
+        <div class="view-column">
+          <div class="view-panel view-slot-grid warriors-layout" id="warriorsPanel" role="tabpanel" aria-labelledby="warriorsTab"></div>
+          <div class="view-panel view-slot-grid supporters-layout hidden" id="supportersPanel" role="tabpanel" aria-labelledby="supportersTab"></div>
+
+          <section class="view-panel admin-view hidden" id="adminPanel" role="tabpanel" aria-labelledby="adminTab">
+            <section class="panel admin-control-panel">
+              <h2>Admin Dashboard</h2>
+              <p class="mode-admin-note" id="adminStatus">Admin login is required.</p>
+              <div class="actions">
+                <button type="button" id="adminUnlockButton">Admin Login</button>
+                <button type="button" id="adminLogoutButton" class="hidden">Log Out</button>
+              </div>
+              <div class="actions hidden" id="adminActionGroup">
+                <button type="button" id="adminSpectatorInsightsButton" class="spectator-insights-toggle" aria-expanded="false" aria-controls="spectatorInsightsPanel">Open Vote Dashboard</button>
+                <button type="button" id="clearButton">Reset</button>
+              </div>
+            </section>
+            <div class="view-slot-grid admin-slot-grid" id="adminSlot"></div>
+          </section>
+
+          <div class="hidden" id="sharedCardStash" aria-hidden="true">
+            <section class="panel user-card registration-panel" id="registrationPanel">
             <h2>Player Registration</h2>
             <form id="signupForm">
               <label>
@@ -1459,9 +1478,9 @@
               </label>
               <button type="submit" id="addButton">Add Participant</button>
             </form>
-          </section>
+            </section>
 
-          <section class="panel user-card spectator-panel" aria-labelledby="spectatorTitle">
+            <section class="panel user-card spectator-panel" id="spectatorPanel" aria-labelledby="spectatorTitle">
             <div class="spectator-head">
               <p class="spectator-eyebrow">Spectator Prize Pick</p>
               <h3 class="spectator-title" id="spectatorTitle">Back Your Champion</h3>
@@ -1479,25 +1498,6 @@
               <button type="submit" id="spectatorVoteButton">Lock Prediction</button>
             </form>
             <p class="spectator-count" id="spectatorCountText">Predictions: 0</p>
-            <div class="spectator-insights-admin hidden" id="spectatorInsightsAdmin">
-              <p class="spectator-insights-admin-note" id="spectatorInsightsAdminNote">Keep this sealed while votes are coming in, then reveal it before the opening match.</p>
-              <button type="button" id="spectatorInsightsPublishButton" class="spectator-insights-publish" aria-pressed="false">Reveal Vote Dashboard</button>
-            </div>
-            <button type="button" id="spectatorInsightsToggle" class="spectator-insights-toggle hidden" aria-expanded="false" aria-controls="spectatorInsightsPanel">Open Vote Dashboard</button>
-            <div class="spectator-insights-overlay hidden" id="spectatorInsightsOverlay" aria-hidden="true"></div>
-            <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true" aria-modal="true" role="dialog">
-              <button type="button" id="spectatorInsightsCloseButton" class="spectator-insights-close">Close Dashboard</button>
-              <div class="spectator-insights-headline">
-                <div>
-                  <p class="spectator-insights-kicker">Crowd Pulse</p>
-                  <h4 class="spectator-insights-title">Vote Dashboard</h4>
-                </div>
-                <p class="spectator-insights-caption" id="spectatorInsightsCaption">See which players have the room talking before the first serve.</p>
-              </div>
-              <div class="spectator-insights-summary" id="spectatorInsightsSummary"></div>
-              <div class="spectator-insights-podium" id="spectatorInsightsPodium"></div>
-              <div class="spectator-insights-chart" id="spectatorInsightsChart"></div>
-            </section>
             <ul class="spectator-votes" id="spectatorVoteList"></ul>
             <div class="spectator-prize-board hidden" id="spectatorPrizeBoard">
               <span class="spectator-prize-badge">Prize Drop</span>
@@ -1505,28 +1505,15 @@
               <p class="spectator-prize-note" id="spectatorPrizeNote">Winning spectators will show up here once the champion is locked.</p>
               <ul class="reward-winners" id="spectatorWinnerList"></ul>
             </div>
-          </section>
+            </section>
 
-          <section class="panel user-card entries-panel" aria-labelledby="entriesTitle">
+            <section class="panel user-card entries-panel" id="entriesPanel" aria-labelledby="entriesTitle">
             <h2 id="entriesTitle">Entries</h2>
             <p class="entries-count" id="countText">Entries: 0 / 16</p>
             <ul class="players" id="playerList"></ul>
-          </section>
+            </section>
+          </div>
         </div>
-
-        <section class="panel view-panel hidden" id="adminPanel" role="tabpanel" aria-labelledby="adminTab">
-          <h2>Admin Dashboard</h2>
-          <p class="mode-admin-note" id="adminStatus">Admin login is required.</p>
-          <div class="actions">
-            <button type="button" id="adminUnlockButton">Admin Login</button>
-            <button type="button" id="adminLogoutButton" class="hidden">Log Out</button>
-          </div>
-          <div class="actions hidden" id="adminActionGroup">
-            <button type="button" id="clearButton">Reset</button>
-          </div>
-          <p class="small" id="adminCountText">Entries: 0 / 16</p>
-          <ul class="players" id="adminPlayerList"></ul>
-        </section>
 
         <section class="panel bracket-panel">
           <div class="bracket-header">
@@ -1553,6 +1540,23 @@
         </section>
       </div>
     </main>
+
+    <div class="spectator-insights-overlay hidden" id="spectatorInsightsOverlay" aria-hidden="true"></div>
+    <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true" aria-modal="true" role="dialog">
+      <div class="spectator-insights-toolbar">
+        <button type="button" id="spectatorInsightsCloseButton" class="spectator-insights-close">Close Dashboard</button>
+      </div>
+      <div class="spectator-insights-headline">
+        <div>
+          <p class="spectator-insights-kicker">Crowd Pulse</p>
+          <h4 class="spectator-insights-title">Vote Dashboard</h4>
+        </div>
+        <p class="spectator-insights-caption" id="spectatorInsightsCaption">See which players have the room talking before the first serve.</p>
+      </div>
+      <div class="spectator-insights-summary" id="spectatorInsightsSummary"></div>
+      <div class="spectator-insights-podium" id="spectatorInsightsPodium"></div>
+      <div class="spectator-insights-chart" id="spectatorInsightsChart"></div>
+    </section>
 
     <script type="module">
       import {
@@ -1596,10 +1600,15 @@
       const spectatorVoteButton = document.getElementById('spectatorVoteButton');
       const spectatorVoteStatus = document.getElementById('spectatorVoteStatus');
       const spectatorCountText = document.getElementById('spectatorCountText');
-      const spectatorInsightsAdmin = document.getElementById('spectatorInsightsAdmin');
-      const spectatorInsightsAdminNote = document.getElementById('spectatorInsightsAdminNote');
-      const spectatorInsightsPublishButton = document.getElementById('spectatorInsightsPublishButton');
-      const spectatorInsightsToggle = document.getElementById('spectatorInsightsToggle');
+      const registrationPanel = document.getElementById('registrationPanel');
+      const spectatorPanelCard = document.getElementById('spectatorPanel');
+      const entriesPanel = document.getElementById('entriesPanel');
+      const warriorsPanel = document.getElementById('warriorsPanel');
+      const supportersPanel = document.getElementById('supportersPanel');
+      const warriorsSlot = document.getElementById('warriorsPanel');
+      const supportersSlot = document.getElementById('supportersPanel');
+      const adminSlot = document.getElementById('adminSlot');
+      const adminSpectatorInsightsButton = document.getElementById('adminSpectatorInsightsButton');
       const spectatorInsightsOverlay = document.getElementById('spectatorInsightsOverlay');
       const spectatorInsightsPanel = document.getElementById('spectatorInsightsPanel');
       const spectatorInsightsCloseButton = document.getElementById('spectatorInsightsCloseButton');
@@ -1612,13 +1621,11 @@
       const spectatorPrizeTitle = document.getElementById('spectatorPrizeTitle');
       const spectatorPrizeNote = document.getElementById('spectatorPrizeNote');
       const spectatorWinnerList = document.getElementById('spectatorWinnerList');
-      const userPanel = document.getElementById('userPanel');
       const adminPanel = document.getElementById('adminPanel');
-      const userTab = document.getElementById('userTab');
+      const warriorsTab = document.getElementById('warriorsTab');
+      const supportersTab = document.getElementById('supportersTab');
       const adminTab = document.getElementById('adminTab');
       const adminStatus = document.getElementById('adminStatus');
-      const adminCountText = document.getElementById('adminCountText');
-      const adminPlayerList = document.getElementById('adminPlayerList');
       const adminActionGroup = document.getElementById('adminActionGroup');
       const adminUnlockButton = document.getElementById('adminUnlockButton');
       const adminLogoutButton = document.getElementById('adminLogoutButton');
@@ -1674,9 +1681,8 @@
       let matchWinners = {};
       let isBracketFocus = false;
       let isAdminMode = false;
-      let currentView = 'user';
+      let currentView = 'warriors';
       let isSwitchingViews = false;
-      let isSpectatorInsightsPublished = false;
       let isSpectatorInsightsExpanded = false;
       let isProfileCardPinned = false;
       let activeProfileCardKey = '';
@@ -1887,12 +1893,32 @@
         tab.setAttribute('aria-pressed', String(isActive));
       }
 
+      function mountSharedSectionsForCurrentView() {
+        if (currentView === 'warriors') {
+          warriorsSlot.append(registrationPanel, entriesPanel);
+          return;
+        }
+
+        if (currentView === 'supporters') {
+          supportersSlot.append(spectatorPanelCard, entriesPanel);
+          return;
+        }
+
+        adminSlot.append(registrationPanel, spectatorPanelCard, entriesPanel);
+      }
+
       function syncViewPanels() {
+        const showingWarriors = currentView === 'warriors';
+        const showingSupporters = currentView === 'supporters';
         const showingAdmin = currentView === 'admin';
-        userPanel.classList.toggle('hidden', showingAdmin);
+
+        warriorsPanel.classList.toggle('hidden', !showingWarriors);
+        supportersPanel.classList.toggle('hidden', !showingSupporters);
         adminPanel.classList.toggle('hidden', !showingAdmin);
-        applyTabState(userTab, !showingAdmin);
+        applyTabState(warriorsTab, showingWarriors);
+        applyTabState(supportersTab, showingSupporters);
         applyTabState(adminTab, showingAdmin);
+        mountSharedSectionsForCurrentView();
       }
 
       function syncAdminControls() {
@@ -1912,10 +1938,14 @@
         }
 
         isSwitchingViews = true;
+        if (nextView !== 'admin') {
+          isSpectatorInsightsExpanded = false;
+        }
         currentView = nextView;
         syncViewPanels();
         syncAdminControls();
         renderPlayerList();
+        renderSpectatorSection();
         isSwitchingViews = false;
       }
 
@@ -2151,36 +2181,16 @@
       function renderSpectatorInsights() {
         const insights = getSpectatorVoteInsights();
         const hasVotes = insights.totalVotes > 0;
-        const canManageInsights = isAdmin();
-        const canRevealInsights = isSpectatorInsightsPublished && hasVotes;
+        const canOpenInsights = canUseAdminControls() && hasVotes;
 
-        spectatorInsightsAdmin.classList.toggle('hidden', !canManageInsights);
-        spectatorInsightsPublishButton.disabled = !canManageInsights || !hasVotes;
-        spectatorInsightsPublishButton.textContent = isSpectatorInsightsPublished ? 'Hide Vote Dashboard' : 'Reveal Vote Dashboard';
-        spectatorInsightsPublishButton.setAttribute('aria-pressed', String(isSpectatorInsightsPublished));
+        adminSpectatorInsightsButton.disabled = !canOpenInsights;
+        adminSpectatorInsightsButton.setAttribute('aria-expanded', String(canOpenInsights && isSpectatorInsightsExpanded));
 
-        if (canManageInsights) {
-          if (!hasVotes) {
-            spectatorInsightsAdminNote.textContent = 'At least one prediction is needed before the crowd dashboard can go live.';
-          } else if (!isSpectatorInsightsPublished) {
-            spectatorInsightsAdminNote.textContent = 'Keep this sealed while votes are coming in, then reveal it before the opening match.';
-          } else if (hasTournamentStarted()) {
-            spectatorInsightsAdminNote.textContent = 'The vote dashboard is live and stays available while the bracket plays out.';
-          } else {
-            spectatorInsightsAdminNote.textContent = 'The vote dashboard is live. Spectators can open it to see who the room is backing.';
-          }
-        }
-
-        if (!canRevealInsights) {
+        if (!canOpenInsights) {
           isSpectatorInsightsExpanded = false;
         }
 
-        spectatorInsightsToggle.classList.toggle('hidden', !canRevealInsights);
-        spectatorInsightsToggle.disabled = !canRevealInsights;
-        spectatorInsightsToggle.textContent = isSpectatorInsightsExpanded ? 'Close Vote Dashboard' : 'Open Vote Dashboard';
-        spectatorInsightsToggle.setAttribute('aria-expanded', String(canRevealInsights && isSpectatorInsightsExpanded));
-
-        const shouldShowPanel = canRevealInsights && isSpectatorInsightsExpanded;
+        const shouldShowPanel = canOpenInsights && isSpectatorInsightsExpanded;
         spectatorInsightsOverlay.classList.toggle('hidden', !shouldShowPanel);
         spectatorInsightsOverlay.setAttribute('aria-hidden', String(!shouldShowPanel));
         spectatorInsightsPanel.classList.toggle('hidden', !shouldShowPanel);
@@ -2207,8 +2217,8 @@
           : 'No chase pack yet';
 
         spectatorInsightsCaption.textContent = hasTournamentStarted()
-          ? 'The crowd picks are locked in. Compare the room hype with the live bracket.'
-          : 'The crowd reveal is live. See who the room is backing before the first serve.';
+          ? 'Admin-only view. Compare the audience vote map with the live bracket.'
+          : 'Admin-only view. Check who the room is backing before the first serve.';
 
         spectatorInsightsSummary.appendChild(
           makeSpectatorInsightStat(
@@ -2246,49 +2256,16 @@
         });
       }
 
-      async function handleSpectatorInsightsPublishToggle() {
-        if (!isAdmin()) {
-          return;
-        }
-
-        if (!spectatorVotes.length) {
-          spectatorVoteStatus.textContent = 'At least one prediction is needed before the vote dashboard can be revealed.';
-          renderSpectatorSection();
-          return;
-        }
-
-        const previousPublishedState = isSpectatorInsightsPublished;
-        const previousExpandedState = isSpectatorInsightsExpanded;
-        const nextPublishedState = !isSpectatorInsightsPublished;
-
-        isSpectatorInsightsPublished = nextPublishedState;
-        isSpectatorInsightsExpanded = nextPublishedState;
-        persistLocalEventState();
-        renderSpectatorSection();
-
-        try {
-          if (isFirebaseAvailable && eventRef) {
-            await update(eventRef, {
-              isSpectatorInsightsPublished: nextPublishedState,
-              updatedAt: serverTimestamp(),
-            });
-          }
-        } catch (error) {
-          console.error(error);
-          isSpectatorInsightsPublished = previousPublishedState;
-          isSpectatorInsightsExpanded = previousExpandedState;
-          persistLocalEventState();
-          renderSpectatorSection();
-          spectatorVoteStatus.textContent = 'Unable to update the vote dashboard visibility right now.';
-        }
-      }
-
       function handleSpectatorInsightsToggle() {
-        if (!isSpectatorInsightsPublished || !spectatorVotes.length) {
+        if (!canUseAdminControls() || !spectatorVotes.length) {
           return;
         }
 
-        isSpectatorInsightsExpanded = !isSpectatorInsightsExpanded;
+        if (isSpectatorInsightsExpanded) {
+          return;
+        }
+
+        isSpectatorInsightsExpanded = true;
         renderSpectatorSection();
       }
 
@@ -2501,7 +2478,6 @@
           title: 'Swanston Table Tennis Tournament',
           maxPlayers: MAX_PLAYERS,
           isRosterFinalized: false,
-          isSpectatorInsightsPublished: false,
           rosterOrder: [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -2571,10 +2547,6 @@
             isRosterFinalized = state.isRosterFinalized;
           }
 
-          if (typeof state.isSpectatorInsightsPublished === 'boolean') {
-            isSpectatorInsightsPublished = state.isSpectatorInsightsPublished;
-          }
-
           if (state.matchWinners && typeof state.matchWinners === 'object') {
             matchWinners = state.matchWinners;
           }
@@ -2598,7 +2570,6 @@
           spectatorVotes,
           rosterOrder,
           isRosterFinalized,
-          isSpectatorInsightsPublished,
           matchWinners,
           updatedAt: Date.now(),
         };
@@ -2614,11 +2585,9 @@
 
       function renderPlayerList() {
         listEl.innerHTML = '';
-        adminPlayerList.innerHTML = '';
 
         players.forEach((p, index) => {
-          listEl.appendChild(makePlayerListItem(p, index, {}));
-          adminPlayerList.appendChild(
+          listEl.appendChild(
             makePlayerListItem(p, index, {
               showDeleteButton: canUseAdminControls(),
             }),
@@ -2626,7 +2595,6 @@
         });
 
         countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
-        adminCountText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS}`;
         if (players.length >= MAX_PLAYERS) {
           addButton.disabled = true;
           countText.textContent = `Entries: ${players.length} / ${MAX_PLAYERS} (closed)`;
@@ -2709,7 +2677,6 @@
                 isRosterFinalized: true,
                 rosterOrder: finalizedIds,
                 matchWinners: {},
-                isSpectatorInsightsPublished,
                 maxPlayers: MAX_PLAYERS,
                 updatedAt: serverTimestamp(),
               });
@@ -3546,7 +3513,6 @@
           spectatorVotes.length = 0;
           rosterOrder = [];
           isRosterFinalized = false;
-          isSpectatorInsightsPublished = false;
           isSpectatorInsightsExpanded = false;
           matchWinners = {};
           clearLocalEventState();
@@ -3565,7 +3531,6 @@
           await update(eventRef, {
             rosterOrder: [],
             isRosterFinalized: false,
-            isSpectatorInsightsPublished: false,
             matchWinners: {},
             updatedAt: serverTimestamp(),
           });
@@ -3604,8 +3569,7 @@
       function wireUiEventListeners() {
         form.addEventListener('submit', handleSubmit);
         spectatorForm.addEventListener('submit', handleSpectatorVoteSubmit);
-        spectatorInsightsPublishButton.addEventListener('click', handleSpectatorInsightsPublishToggle);
-        spectatorInsightsToggle.addEventListener('click', handleSpectatorInsightsToggle);
+        adminSpectatorInsightsButton.addEventListener('click', handleSpectatorInsightsToggle);
         spectatorInsightsOverlay.addEventListener('click', closeSpectatorInsightsModal);
         spectatorInsightsCloseButton.addEventListener('click', closeSpectatorInsightsModal);
         clearButton.addEventListener('click', resetEventState);
@@ -3625,7 +3589,7 @@
 
           hideProfileCard(true);
         });
-        adminPlayerList.addEventListener('click', async (event) => {
+        listEl.addEventListener('click', async (event) => {
           if (!canUseAdminControls()) {
             return;
           }
@@ -3641,7 +3605,8 @@
         });
         drawRosterButton.addEventListener('click', applyRosterDecision);
         shareButton.addEventListener('click', shareEvent);
-        userTab.addEventListener('click', () => switchView('user'));
+        warriorsTab.addEventListener('click', () => switchView('warriors'));
+        supportersTab.addEventListener('click', () => switchView('supporters'));
         adminTab.addEventListener('click', () => switchView('admin'));
         adminUnlockButton.addEventListener('click', () => {
           if (requireAdminGate()) {
@@ -3650,7 +3615,7 @@
         });
         adminLogoutButton.addEventListener('click', () => {
           setAdminMode(false);
-          switchView('user');
+          switchView('warriors');
         });
       }
 
@@ -3732,7 +3697,6 @@
             const data = snapshot.val();
             rosterOrder = Array.isArray(data?.rosterOrder) ? data.rosterOrder : [];
             isRosterFinalized = Boolean(data?.isRosterFinalized);
-            isSpectatorInsightsPublished = Boolean(data?.isSpectatorInsightsPublished);
             matchWinners = (data?.matchWinners && typeof data.matchWinners === 'object')
               ? data.matchWinners
               : {};
@@ -3912,7 +3876,7 @@
         renderPlayerList();
         renderBracket();
         setAdminMode(sessionStorage.getItem(ADMIN_SESSION_KEY) === '1');
-        switchView('user');
+        switchView('warriors');
 
         if (!isFirebaseConfigured()) {
           console.warn('[RK Events] Firebase config has placeholder values.');

@@ -1576,7 +1576,7 @@
         row.className = 'player-row';
 
         const text = document.createElement('span');
-        text.textContent = `${index + 1}. ${player.name} (Aura: ${player.aura}, Weak: ${player.weak})`;
+        text.textContent = player.name;
         row.appendChild(text);
 
         if (options.showDeleteButton) {

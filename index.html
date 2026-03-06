@@ -444,16 +444,42 @@
         color: var(--white);
       }
 
+      .spectator-insights-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 17, 17, 0.68);
+        backdrop-filter: blur(10px);
+        z-index: 10010;
+      }
+
       .spectator-insights {
-        margin-top: 16px;
-        padding: 18px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: min(1120px, calc(100vw - 32px));
+        max-height: min(88vh, 920px);
+        margin: 0;
+        padding: 24px;
         border: 4px solid var(--black);
         border-radius: 22px;
         background:
           radial-gradient(circle at top right, rgba(255, 207, 0, 0.42), transparent 34%),
           linear-gradient(160deg, #121212 0%, #25124b 58%, #0b446b 100%);
         color: var(--white);
-        box-shadow: 6px 6px 0px var(--black);
+        box-shadow: 12px 12px 0px var(--black);
+        transform: translate(-50%, -50%);
+        overflow: auto;
+        z-index: 10011;
+      }
+
+      .spectator-insights-close {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        padding: 10px 14px;
+        background: var(--brand-yellow);
+        color: var(--black);
+        z-index: 1;
       }
 
       .spectator-insights-headline {
@@ -462,6 +488,7 @@
         justify-content: space-between;
         gap: 16px;
         margin-bottom: 18px;
+        padding-right: 140px;
         flex-wrap: wrap;
       }
 
@@ -615,6 +642,8 @@
 
       .spectator-insights-chart {
         margin-top: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
       }
 
       .spectator-chart-row {
@@ -1246,6 +1275,10 @@
         background: var(--brand-alt);
       }
 
+      body.spectator-insights-open {
+        overflow: hidden;
+      }
+
       body.bracket-focus .hero,
       body.bracket-focus .event-summary,
       body.bracket-focus .content > :not(.bracket-panel) {
@@ -1317,7 +1350,8 @@
         }
 
         .spectator-insights-summary,
-        .spectator-insights-podium {
+        .spectator-insights-podium,
+        .spectator-insights-chart {
           grid-template-columns: 1fr;
         }
 
@@ -1328,6 +1362,22 @@
 
         .spectator-insights-caption {
           text-align: left;
+        }
+
+        .spectator-insights {
+          width: calc(100vw - 20px);
+          max-height: calc(100vh - 20px);
+          padding: 18px;
+        }
+
+        .spectator-insights-headline {
+          padding-right: 0;
+        }
+
+        .spectator-insights-close {
+          position: static;
+          margin-bottom: 14px;
+          width: 100%;
         }
       }
 
@@ -1433,8 +1483,10 @@
               <p class="spectator-insights-admin-note" id="spectatorInsightsAdminNote">Keep this sealed while votes are coming in, then reveal it before the opening match.</p>
               <button type="button" id="spectatorInsightsPublishButton" class="spectator-insights-publish" aria-pressed="false">Reveal Vote Dashboard</button>
             </div>
-            <button type="button" id="spectatorInsightsToggle" class="spectator-insights-toggle hidden" aria-expanded="false" aria-controls="spectatorInsightsPanel">Show Vote Dashboard</button>
-            <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true">
+            <button type="button" id="spectatorInsightsToggle" class="spectator-insights-toggle hidden" aria-expanded="false" aria-controls="spectatorInsightsPanel">Open Vote Dashboard</button>
+            <div class="spectator-insights-overlay hidden" id="spectatorInsightsOverlay" aria-hidden="true"></div>
+            <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true" aria-modal="true" role="dialog">
+              <button type="button" id="spectatorInsightsCloseButton" class="spectator-insights-close">Close Dashboard</button>
               <div class="spectator-insights-headline">
                 <div>
                   <p class="spectator-insights-kicker">Crowd Pulse</p>
@@ -1548,7 +1600,9 @@
       const spectatorInsightsAdminNote = document.getElementById('spectatorInsightsAdminNote');
       const spectatorInsightsPublishButton = document.getElementById('spectatorInsightsPublishButton');
       const spectatorInsightsToggle = document.getElementById('spectatorInsightsToggle');
+      const spectatorInsightsOverlay = document.getElementById('spectatorInsightsOverlay');
       const spectatorInsightsPanel = document.getElementById('spectatorInsightsPanel');
+      const spectatorInsightsCloseButton = document.getElementById('spectatorInsightsCloseButton');
       const spectatorInsightsCaption = document.getElementById('spectatorInsightsCaption');
       const spectatorInsightsSummary = document.getElementById('spectatorInsightsSummary');
       const spectatorInsightsPodium = document.getElementById('spectatorInsightsPodium');
@@ -2085,6 +2139,15 @@
         return row;
       }
 
+      function closeSpectatorInsightsModal() {
+        if (!isSpectatorInsightsExpanded) {
+          return;
+        }
+
+        isSpectatorInsightsExpanded = false;
+        renderSpectatorSection();
+      }
+
       function renderSpectatorInsights() {
         const insights = getSpectatorVoteInsights();
         const hasVotes = insights.totalVotes > 0;
@@ -2114,12 +2177,15 @@
 
         spectatorInsightsToggle.classList.toggle('hidden', !canRevealInsights);
         spectatorInsightsToggle.disabled = !canRevealInsights;
-        spectatorInsightsToggle.textContent = isSpectatorInsightsExpanded ? 'Hide Vote Dashboard' : 'Show Vote Dashboard';
+        spectatorInsightsToggle.textContent = isSpectatorInsightsExpanded ? 'Close Vote Dashboard' : 'Open Vote Dashboard';
         spectatorInsightsToggle.setAttribute('aria-expanded', String(canRevealInsights && isSpectatorInsightsExpanded));
 
         const shouldShowPanel = canRevealInsights && isSpectatorInsightsExpanded;
+        spectatorInsightsOverlay.classList.toggle('hidden', !shouldShowPanel);
+        spectatorInsightsOverlay.setAttribute('aria-hidden', String(!shouldShowPanel));
         spectatorInsightsPanel.classList.toggle('hidden', !shouldShowPanel);
         spectatorInsightsPanel.setAttribute('aria-hidden', String(!shouldShowPanel));
+        document.body.classList.toggle('spectator-insights-open', shouldShowPanel);
 
         spectatorInsightsSummary.innerHTML = '';
         spectatorInsightsPodium.innerHTML = '';
@@ -3540,6 +3606,8 @@
         spectatorForm.addEventListener('submit', handleSpectatorVoteSubmit);
         spectatorInsightsPublishButton.addEventListener('click', handleSpectatorInsightsPublishToggle);
         spectatorInsightsToggle.addEventListener('click', handleSpectatorInsightsToggle);
+        spectatorInsightsOverlay.addEventListener('click', closeSpectatorInsightsModal);
+        spectatorInsightsCloseButton.addEventListener('click', closeSpectatorInsightsModal);
         clearButton.addEventListener('click', resetEventState);
         bracketShell.addEventListener('scroll', () => hideProfileCard(true), { passive: true });
         document.addEventListener('click', (event) => {
@@ -3589,6 +3657,11 @@
       function wireGlobalShortcuts() {
         window.addEventListener('resize', () => hideProfileCard(true));
         window.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && isSpectatorInsightsExpanded) {
+            closeSpectatorInsightsModal();
+            return;
+          }
+
           if (event.key === 'Escape' && isProfileCardPinned) {
             hideProfileCard(true);
             return;

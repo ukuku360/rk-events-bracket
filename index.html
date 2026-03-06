@@ -369,8 +369,24 @@
 
       .spectator-form {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+        grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+        align-items: end;
+        gap: 16px 18px;
+      }
+
+      .spectator-form label {
+        min-width: 0;
+      }
+
+      .spectator-form label span {
+        display: block;
+        line-height: 1.1;
+      }
+
+      .spectator-form input,
+      .spectator-form select {
+        width: 100%;
+        min-width: 0;
       }
 
       .spectator-form button {
@@ -1041,14 +1057,19 @@
         }
       }
 
-      @media (max-width: 760px) {
-        .registration-panel form,
+      @media (max-width: 960px) {
         .spectator-form {
           grid-template-columns: 1fr;
         }
 
         .spectator-form button {
           grid-column: auto;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .registration-panel form {
+          grid-template-columns: 1fr;
         }
       }
 

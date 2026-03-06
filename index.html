@@ -265,6 +265,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 24px;
         align-content: start;
+        align-items: stretch;
       }
 
       .warriors-layout,
@@ -815,6 +816,7 @@
         flex-direction: column;
         background: linear-gradient(180deg, #fffef8 0%, #fff7d6 100%);
         min-height: 100%;
+        min-width: 0;
       }
 
       .entries-count {
@@ -834,20 +836,23 @@
 
       .entries-panel .players {
         margin-top: 18px;
-        max-height: 560px;
-        min-height: 360px;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
       }
 
       .warriors-layout .registration-panel,
       .supporters-layout .spectator-panel,
       .warriors-layout .entries-panel,
-      .supporters-layout .entries-panel {
+      .supporters-layout .entries-panel,
+      .admin-slot-grid .spectator-panel,
+      .admin-slot-grid .entries-panel {
         min-height: 100%;
       }
 
       .warriors-layout .entries-panel .players,
       .supporters-layout .entries-panel .players {
-        max-height: clamp(420px, 55vh, 680px);
+        max-height: none;
       }
 
       .admin-delete {
@@ -1361,10 +1366,6 @@
       @media (max-width: 1080px) {
         .content {
           grid-template-columns: 1fr;
-        }
-
-        .entries-panel .players {
-          max-height: 360px;
         }
       }
 

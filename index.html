@@ -2121,26 +2121,110 @@
         return Boolean(entrant && !entrant.empty);
       }
 
-      function getResolvedMatchWinner(level, matchIndex, entrants = getBracketEntrants()) {
+      function getMatchResolution(level, matchIndex, entrants = getBracketEntrants()) {
         if (level < 1 || level > 4) {
-          return undefined;
+          return { state: 'empty', participantIndexes: [] };
         }
 
-        const participants = level === 1
-          ? [matchIndex * 2, matchIndex * 2 + 1]
-          : [
-              getResolvedMatchWinner(level - 1, matchIndex * 2, entrants),
-              getResolvedMatchWinner(level - 1, matchIndex * 2 + 1, entrants),
-            ].filter((entrantIndex) => entrantIndex !== undefined);
+        const key = getWinnerKey(level, matchIndex);
+        const manualWinner = matchWinners[key];
 
-        const activeParticipants = participants.filter((entrantIndex) => isActiveEntrantIndex(entrants, entrantIndex));
-        const manualWinner = matchWinners[getWinnerKey(level, matchIndex)];
+        if (level === 1) {
+          const participantIndexes = [matchIndex * 2, matchIndex * 2 + 1]
+            .filter((entrantIndex) => isActiveEntrantIndex(entrants, entrantIndex));
 
-        if (manualWinner !== undefined && activeParticipants.includes(manualWinner)) {
-          return manualWinner;
+          if (manualWinner !== undefined && participantIndexes.includes(manualWinner)) {
+            return {
+              state: 'resolved',
+              participantIndexes,
+              winnerIndex: manualWinner,
+              decidedBy: 'manual',
+            };
+          }
+
+          if (participantIndexes.length === 2) {
+            return {
+              state: 'pending',
+              participantIndexes,
+            };
+          }
+
+          if (participantIndexes.length === 1) {
+            return {
+              state: 'resolved',
+              participantIndexes,
+              winnerIndex: participantIndexes[0],
+              decidedBy: 'bye',
+            };
+          }
+
+          return { state: 'empty', participantIndexes: [] };
         }
 
-        return activeParticipants.length === 1 ? activeParticipants[0] : undefined;
+        const leftResolution = getMatchResolution(level - 1, matchIndex * 2, entrants);
+        const rightResolution = getMatchResolution(level - 1, matchIndex * 2 + 1, entrants);
+        const participantIndexes = [];
+
+        if (leftResolution.state === 'resolved' && leftResolution.winnerIndex !== undefined) {
+          participantIndexes.push(leftResolution.winnerIndex);
+        }
+
+        if (rightResolution.state === 'resolved' && rightResolution.winnerIndex !== undefined) {
+          participantIndexes.push(rightResolution.winnerIndex);
+        }
+
+        if (manualWinner !== undefined && participantIndexes.includes(manualWinner)) {
+          return {
+            state: 'resolved',
+            participantIndexes,
+            winnerIndex: manualWinner,
+            decidedBy: 'manual',
+          };
+        }
+
+        const leftEmpty = leftResolution.state === 'empty';
+        const rightEmpty = rightResolution.state === 'empty';
+        const leftResolved = leftResolution.state === 'resolved' && leftResolution.winnerIndex !== undefined;
+        const rightResolved = rightResolution.state === 'resolved' && rightResolution.winnerIndex !== undefined;
+
+        if (leftResolved && rightResolved) {
+          return {
+            state: 'pending',
+            participantIndexes,
+          };
+        }
+
+        if (leftResolved && rightEmpty) {
+          return {
+            state: 'resolved',
+            participantIndexes,
+            winnerIndex: leftResolution.winnerIndex,
+            decidedBy: 'bye',
+          };
+        }
+
+        if (rightResolved && leftEmpty) {
+          return {
+            state: 'resolved',
+            participantIndexes,
+            winnerIndex: rightResolution.winnerIndex,
+            decidedBy: 'bye',
+          };
+        }
+
+        if (leftEmpty && rightEmpty) {
+          return { state: 'empty', participantIndexes: [] };
+        }
+
+        return {
+          state: 'pending',
+          participantIndexes,
+        };
+      }
+
+      function getResolvedMatchWinner(level, matchIndex, entrants = getBracketEntrants()) {
+        const resolution = getMatchResolution(level, matchIndex, entrants);
+        return resolution.state === 'resolved' ? resolution.winnerIndex : undefined;
       }
 
       async function seedTestPlayersIfNeeded() {

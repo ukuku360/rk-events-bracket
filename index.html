@@ -1357,6 +1357,52 @@
         overflow: hidden;
       }
 
+      .champion-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        pointer-events: none;
+      }
+
+      .champion-overlay-shell {
+        width: min(1080px, 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+      }
+
+      .champion-burst {
+        flex: 0 1 520px;
+        font-size: clamp(2rem, 8vw, 5rem);
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 0 0 40px #f5a623, 0 4px 24px rgba(0, 0, 0, 0.5);
+        letter-spacing: -0.02em;
+        text-align: center;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: none;
+      }
+
+      .champion-prize-board {
+        flex: 0 1 340px;
+        width: min(340px, 100%);
+        margin: 0;
+        opacity: 0;
+        transform: translate3d(28px, 12px, 0) rotate(2deg) scale(0.96);
+        transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .champion-overlay.show-prize .champion-prize-board {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+      }
+
       body.bracket-focus .hero,
       body.bracket-focus .event-summary,
       body.bracket-focus .content > :not(.bracket-panel) {
@@ -1446,6 +1492,20 @@
           padding: 18px;
         }
 
+        .champion-overlay-shell {
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .champion-burst {
+          flex-basis: auto;
+        }
+
+        .champion-prize-board {
+          width: min(100%, 340px);
+          transform: translate3d(0, 18px, 0) rotate(1deg) scale(0.96);
+        }
+
         .spectator-insights-close {
           width: auto;
         }
@@ -1467,8 +1527,16 @@
   </head>
   <body>
     <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
-    <div id="championOverlay" style="display:none;position:fixed;inset:0;z-index:10000;pointer-events:none;align-items:center;justify-content:center;flex-direction:column;">
-      <div id="championBurst" style="font-size:clamp(2rem,8vw,5rem);font-weight:900;color:#fff;text-shadow:0 0 40px #f5a623,0 4px 24px rgba(0,0,0,0.5);letter-spacing:-0.02em;text-align:center;opacity:0;transform:scale(0.5);transition:none;"></div>
+    <div id="championOverlay" class="champion-overlay" aria-hidden="true">
+      <div class="champion-overlay-shell">
+        <div id="championBurst" class="champion-burst"></div>
+        <aside class="spectator-prize-board champion-prize-board" id="championPrizeBoard" aria-hidden="true">
+          <span class="spectator-prize-badge">Prize Drop</span>
+          <h3 class="spectator-prize-title" id="championPrizeTitle">Champion Callers</h3>
+          <p class="spectator-prize-note" id="championPrizeNote">Winning spectators will show up here once the champion is locked.</p>
+          <ul class="reward-winners" id="championWinnerList"></ul>
+        </aside>
+      </div>
     </div>
     <div class="player-profile-card" id="playerProfileCard" aria-hidden="true">
       <p class="player-profile-kicker">Bracket Intel</p>
@@ -1702,6 +1770,10 @@
       const spectatorPrizeTitle = document.getElementById('spectatorPrizeTitle');
       const spectatorPrizeNote = document.getElementById('spectatorPrizeNote');
       const spectatorWinnerList = document.getElementById('spectatorWinnerList');
+      const championPrizeBoard = document.getElementById('championPrizeBoard');
+      const championPrizeTitle = document.getElementById('championPrizeTitle');
+      const championPrizeNote = document.getElementById('championPrizeNote');
+      const championWinnerList = document.getElementById('championWinnerList');
       const adminPanel = document.getElementById('adminPanel');
       const warriorsTab = document.getElementById('warriorsTab');
       const supportersTab = document.getElementById('supportersTab');
@@ -2610,6 +2682,58 @@
         return row;
       }
 
+      function renderPrizeBoardContent(titleEl, noteEl, listEl, champion, prizeWinners) {
+        listEl.innerHTML = '';
+
+        if (!champion) {
+          titleEl.textContent = 'Champion Callers';
+          noteEl.textContent = 'Winning spectators will show up here once the champion is locked.';
+          return false;
+        }
+
+        titleEl.textContent = `${champion.name} Was The Call`;
+        if (!prizeWinners.length) {
+          noteEl.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
+          const emptyWinner = document.createElement('li');
+          emptyWinner.className = 'placeholder';
+          emptyWinner.textContent = 'No correct predictions this round.';
+          listEl.appendChild(emptyWinner);
+          return true;
+        }
+
+        noteEl.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
+        prizeWinners.forEach((winner, index) => {
+          const item = document.createElement('li');
+          item.style.setProperty('--order', String(index));
+
+          const name = document.createElement('span');
+          name.className = 'reward-winner-name';
+          name.textContent = winner.name;
+          item.appendChild(name);
+
+          const tag = document.createElement('span');
+          tag.className = 'reward-winner-tag';
+          tag.textContent = 'Prize eligible';
+          item.appendChild(tag);
+
+          listEl.appendChild(item);
+        });
+
+        return true;
+      }
+
+      function syncChampionPrizeBoard(champion, prizeWinners) {
+        const hasChampion = renderPrizeBoardContent(
+          championPrizeTitle,
+          championPrizeNote,
+          championWinnerList,
+          champion,
+          prizeWinners,
+        );
+        championPrizeBoard.setAttribute('aria-hidden', String(!hasChampion));
+        return hasChampion;
+      }
+
       function closeSpectatorInsightsModal() {
         if (!isSpectatorInsightsExpanded) {
           return;
@@ -2791,41 +2915,14 @@
           }
 
           spectatorPrizeBoard.classList.toggle('hidden', !champion);
-          spectatorWinnerList.innerHTML = '';
-
-          if (!champion) {
-            spectatorPrizeTitle.textContent = 'Champion Callers';
-            spectatorPrizeNote.textContent = 'Winning spectators will show up here once the champion is locked.';
-            return;
-          }
-
-          spectatorPrizeTitle.textContent = `${champion.name} Was The Call`;
-          if (!prizeWinners.length) {
-            spectatorPrizeNote.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
-            const emptyWinner = document.createElement('li');
-            emptyWinner.className = 'placeholder';
-            emptyWinner.textContent = 'No correct predictions this round.';
-            spectatorWinnerList.appendChild(emptyWinner);
-            return;
-          }
-
-          spectatorPrizeNote.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
-          prizeWinners.forEach((winner, index) => {
-            const item = document.createElement('li');
-            item.style.setProperty('--order', String(index));
-
-            const name = document.createElement('span');
-            name.className = 'reward-winner-name';
-            name.textContent = winner.name;
-            item.appendChild(name);
-
-            const tag = document.createElement('span');
-            tag.className = 'reward-winner-tag';
-            tag.textContent = 'Prize eligible';
-            item.appendChild(tag);
-
-            spectatorWinnerList.appendChild(item);
-          });
+          renderPrizeBoardContent(
+            spectatorPrizeTitle,
+            spectatorPrizeNote,
+            spectatorWinnerList,
+            champion,
+            prizeWinners,
+          );
+          syncChampionPrizeBoard(champion, prizeWinners);
         } finally {
           queueEntriesPanelHeightSync();
         }
@@ -4435,6 +4532,9 @@
       function triggerChampionCelebration(name) {
         champTimeouts.forEach(clearTimeout);
         champTimeouts = [];
+        const champion = getChampionEntrant();
+        const prizeWinners = getSpectatorPrizeWinners();
+        const shouldShowPrizeBoard = syncChampionPrizeBoard(champion, prizeWinners);
 
         // Multi-wave bursts across the screen
         const w = confettiCanvas.width;
@@ -4457,12 +4557,17 @@
 
         // Champion name overlay
         championBurst.textContent = `🏆 ${name}`;
+        championOverlay.classList.remove('show-prize');
         championOverlay.style.display = 'flex';
+        championOverlay.setAttribute('aria-hidden', 'false');
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             championBurst.style.transition = 'opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
             championBurst.style.opacity = '1';
             championBurst.style.transform = 'scale(1)';
+            if (shouldShowPrizeBoard) {
+              championOverlay.classList.add('show-prize');
+            }
           });
         });
 
@@ -4472,6 +4577,8 @@
           championBurst.style.transform = 'scale(1.1)';
           champTimeouts.push(setTimeout(() => {
             championOverlay.style.display = 'none';
+            championOverlay.setAttribute('aria-hidden', 'true');
+            championOverlay.classList.remove('show-prize');
             championBurst.style.transition = 'none';
             championBurst.style.transform = 'scale(0.5)';
           }, 620));

@@ -1956,6 +1956,193 @@
         return childCount;
       }
 
+      function createEmptyBracketEntrant() {
+        return {
+          name: 'BYE',
+          aura: '',
+          weak: '',
+          empty: true,
+          isBye: true,
+        };
+      }
+
+      function clonePlayerRecord(player, overrides = {}) {
+        if (!player) {
+          return null;
+        }
+
+        return {
+          ...player,
+          ...overrides,
+        };
+      }
+
+      function rosterOrderUsesIds(order = rosterOrder) {
+        return Array.isArray(order) && order.some((entry) => typeof entry === 'string');
+      }
+
+      function rosterEntryMatchesPlayer(entry, player) {
+        if (!entry || !player) {
+          return false;
+        }
+
+        if (typeof entry === 'string') {
+          return Boolean(player.id) && entry === player.id;
+        }
+
+        if (entry.id && player.id && entry.id === player.id) {
+          return true;
+        }
+
+        const entryKey = getPlayerSelectionKey(entry);
+        const playerKey = getPlayerSelectionKey(player);
+        if (!entryKey || !playerKey || entryKey !== playerKey) {
+          return false;
+        }
+
+        const entryCreatedAt = entry.createdAt ?? '';
+        const playerCreatedAt = player.createdAt ?? '';
+        return entryCreatedAt === playerCreatedAt || !entryCreatedAt || !playerCreatedAt;
+      }
+
+      function findPlayerIndexInList(player, list) {
+        if (!player || !Array.isArray(list)) {
+          return -1;
+        }
+
+        return list.findIndex((candidate) => rosterEntryMatchesPlayer(candidate, player));
+      }
+
+      function findRosterSlotIndexForPlayer(player, order = rosterOrder) {
+        if (!player || !Array.isArray(order)) {
+          return -1;
+        }
+
+        return order.findIndex((entry) => rosterEntryMatchesPlayer(entry, player));
+      }
+
+      function buildRosterEntryForPlayer(player, order = rosterOrder) {
+        if (!player) {
+          return null;
+        }
+
+        if (rosterOrderUsesIds(order)) {
+          return player.id || null;
+        }
+
+        return clonePlayerRecord(player);
+      }
+
+      function removeWaitingPlayerLocally(player) {
+        const waitlistIndex = findPlayerIndexInList(player, waitingPlayers);
+        if (waitlistIndex !== -1) {
+          waitingPlayers.splice(waitlistIndex, 1);
+        }
+      }
+
+      function pruneMatchWinnersForSlot(slotIndex, winners = matchWinners) {
+        const nextWinners = { ...winners };
+
+        if (!Number.isInteger(slotIndex) || slotIndex < 0) {
+          return nextWinners;
+        }
+
+        let level = 1;
+        let matchIndex = Math.floor(slotIndex / 2);
+        while (level <= 4) {
+          delete nextWinners[getWinnerKey(level, matchIndex)];
+          matchIndex = Math.floor(matchIndex / 2);
+          level += 1;
+        }
+
+        delete nextWinners[THIRD_PLACE_KEY];
+        return nextWinners;
+      }
+
+      function updateRosterAfterParticipantRemoval(removedPlayer, replacementPlayer = null) {
+        if (!isRosterFinalized || !Array.isArray(rosterOrder) || !rosterOrder.length) {
+          return -1;
+        }
+
+        const slotIndex = findRosterSlotIndexForPlayer(removedPlayer);
+        if (slotIndex === -1) {
+          return -1;
+        }
+
+        const nextOrder = [...rosterOrder];
+        nextOrder[slotIndex] = replacementPlayer ? buildRosterEntryForPlayer(replacementPlayer, nextOrder) : null;
+        rosterOrder = nextOrder;
+        matchWinners = pruneMatchWinnersForSlot(slotIndex, matchWinners);
+        return slotIndex;
+      }
+
+      function applyParticipantRemovalState(removedPlayer, replacementPlayer = null, preferredIndex = -1) {
+        if (!removedPlayer) {
+          return;
+        }
+
+        const removalIndex = Number.isInteger(preferredIndex)
+          && preferredIndex >= 0
+          && preferredIndex < players.length
+          && rosterEntryMatchesPlayer(players[preferredIndex], removedPlayer)
+          ? preferredIndex
+          : findPlayerIndexInList(removedPlayer, players);
+
+        if (removalIndex === -1) {
+          if (replacementPlayer) {
+            removeWaitingPlayerLocally(replacementPlayer);
+          }
+          updateRosterAfterParticipantRemoval(removedPlayer, replacementPlayer);
+          persistLocalEventState();
+          renderPlayerList();
+          renderBracket();
+          return;
+        }
+
+        players.splice(removalIndex, 1);
+
+        if (replacementPlayer) {
+          removeWaitingPlayerLocally(replacementPlayer);
+          players.splice(Math.min(removalIndex, players.length), 0, replacementPlayer);
+        }
+
+        updateRosterAfterParticipantRemoval(removedPlayer, replacementPlayer);
+        persistLocalEventState();
+        renderPlayerList();
+        renderBracket();
+      }
+
+      function isActiveEntrantIndex(entrants, entrantIndex) {
+        if (!Number.isInteger(entrantIndex) || entrantIndex < 0) {
+          return false;
+        }
+
+        const entrant = entrants[entrantIndex];
+        return Boolean(entrant && !entrant.empty);
+      }
+
+      function getResolvedMatchWinner(level, matchIndex, entrants = getBracketEntrants()) {
+        if (level < 1 || level > 4) {
+          return undefined;
+        }
+
+        const participants = level === 1
+          ? [matchIndex * 2, matchIndex * 2 + 1]
+          : [
+              getResolvedMatchWinner(level - 1, matchIndex * 2, entrants),
+              getResolvedMatchWinner(level - 1, matchIndex * 2 + 1, entrants),
+            ].filter((entrantIndex) => entrantIndex !== undefined);
+
+        const activeParticipants = participants.filter((entrantIndex) => isActiveEntrantIndex(entrants, entrantIndex));
+        const manualWinner = matchWinners[getWinnerKey(level, matchIndex)];
+
+        if (manualWinner !== undefined && activeParticipants.includes(manualWinner)) {
+          return manualWinner;
+        }
+
+        return activeParticipants.length === 1 ? activeParticipants[0] : undefined;
+      }
+
       async function seedTestPlayersIfNeeded() {
         if (!FILL_TEST_PLAYERS_ON_LOAD || players.length || waitingPlayers.length) {
           return;
@@ -2175,14 +2362,14 @@
       }
 
       function getChampionEntrant() {
-        const championIndex = matchWinners['4-0'];
-        if (championIndex === undefined) {
-          return null;
-        }
-
         const entrants = [...getBracketEntrants()];
         while (entrants.length < MAX_PLAYERS) {
-          entrants.push({ empty: true });
+          entrants.push(createEmptyBracketEntrant());
+        }
+
+        const championIndex = getResolvedMatchWinner(4, 0, entrants);
+        if (championIndex === undefined) {
+          return null;
         }
 
         const champion = entrants[championIndex];
@@ -2829,14 +3016,19 @@
 
         if (isShufflingRoster) {
           rosterStatus.textContent = 'Drawing roster now. The final matchups will be set shortly.';
+        } else if (isRosterFinalized) {
+          const emptySlotCount = Math.max(0, MAX_PLAYERS - players.length);
+          if (waitlistCount) {
+            rosterStatus.textContent = `Roster is active. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'remains' : 'remain'} on the waitlist.`;
+          } else if (emptySlotCount > 0) {
+            rosterStatus.textContent = `Roster is active. ${emptySlotCount} bracket slot${emptySlotCount === 1 ? ' is' : 's are'} empty and will advance by bye. New signups now go to the waitlist.`;
+          } else {
+            rosterStatus.textContent = 'Roster is active. New signups now go to the waitlist.';
+          }
         } else if (players.length < 2) {
           rosterStatus.textContent = 'At least 2 participants are needed to draw a roster.';
         } else if (players.length < MAX_PLAYERS) {
           rosterStatus.textContent = `${players.length} of ${MAX_PLAYERS} slots filled. You can draw now or wait for more participants.`;
-        } else if (isRosterFinalized) {
-          rosterStatus.textContent = waitlistCount
-            ? `Roster is active. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'remains' : 'remain'} on the waitlist.`
-            : 'Roster is active. New signups now go to the waitlist.';
         } else if (waitlistCount) {
           rosterStatus.textContent = `All ${MAX_PLAYERS} slots are filled. ${waitlistCount} player${waitlistCount === 1 ? '' : 's'} ${waitlistCount === 1 ? 'is' : 'are'} waiting for an opening.`;
         } else if (!isFirebaseAvailable) {
@@ -2962,23 +3154,24 @@
         return `${level}-${matchIndex}`;
       }
 
-      function getMatchParticipantIndexes(level, matchIndex) {
+      function getMatchParticipantIndexes(level, matchIndex, entrants = getBracketEntrants()) {
         if (level < 1 || level > 4) {
           return [];
         }
 
         if (level === 1) {
-          return [matchIndex * 2, matchIndex * 2 + 1];
+          return [matchIndex * 2, matchIndex * 2 + 1]
+            .filter((entrantIndex) => isActiveEntrantIndex(entrants, entrantIndex));
         }
 
-        const leftWinner = matchWinners[getWinnerKey(level - 1, matchIndex * 2)];
-        const rightWinner = matchWinners[getWinnerKey(level - 1, matchIndex * 2 + 1)];
+        const leftWinner = getResolvedMatchWinner(level - 1, matchIndex * 2, entrants);
+        const rightWinner = getResolvedMatchWinner(level - 1, matchIndex * 2 + 1, entrants);
         return [leftWinner, rightWinner].filter((entrantIndex) => entrantIndex !== undefined);
       }
 
-      function getMatchLoserIndex(level, matchIndex) {
-        const participants = getMatchParticipantIndexes(level, matchIndex);
-        const winnerIndex = matchWinners[getWinnerKey(level, matchIndex)];
+      function getMatchLoserIndex(level, matchIndex, entrants = getBracketEntrants()) {
+        const participants = getMatchParticipantIndexes(level, matchIndex, entrants);
+        const winnerIndex = getResolvedMatchWinner(level, matchIndex, entrants);
 
         if (participants.length < 2 || winnerIndex === undefined) {
           return undefined;
@@ -2987,16 +3180,19 @@
         return participants.find((entrantIndex) => entrantIndex !== winnerIndex);
       }
 
-      function getThirdPlaceEntrantIndexes() {
-        return [getMatchLoserIndex(3, 0), getMatchLoserIndex(3, 1)];
+      function getThirdPlaceEntrantIndexes(entrants = getBracketEntrants()) {
+        return [
+          getMatchLoserIndex(3, 0, entrants),
+          getMatchLoserIndex(3, 1, entrants),
+        ];
       }
 
-      function getFourthPlaceIndex(thirdPlaceWinner = matchWinners[THIRD_PLACE_KEY]) {
+      function getFourthPlaceIndex(thirdPlaceWinner = matchWinners[THIRD_PLACE_KEY], entrants = getBracketEntrants()) {
         if (thirdPlaceWinner === undefined) {
           return undefined;
         }
 
-        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes();
+        const thirdPlaceEntrants = getThirdPlaceEntrantIndexes(entrants);
         return thirdPlaceEntrants.find((entrantIndex) => entrantIndex !== undefined && entrantIndex !== thirdPlaceWinner);
       }
 
@@ -3316,7 +3512,7 @@
         const cy = clientY ?? window.innerHeight / 2;
         if (parentLevel === 4) {
           const entrants = getBracketEntrants();
-          while (entrants.length < MAX_PLAYERS) entrants.push({ empty: true });
+          while (entrants.length < MAX_PLAYERS) entrants.push(createEmptyBracketEntrant());
           const champPlayer = entrants[winnerEntrantIndex];
           const champName = champPlayer && !champPlayer.empty ? champPlayer.name : 'Champion';
           triggerChampionCelebration(champName);
@@ -3366,20 +3562,25 @@
           return [...players];
         }
 
-        const byId = new Map(players.map((player) => [player.id, player]));
-        const first = rosterOrder;
+        const byId = new Map(
+          players
+            .filter((player) => player?.id)
+            .map((player) => [player.id, player]),
+        );
         const ordered = [];
 
-        if (typeof first[0] === 'string') {
-          for (const id of first) {
-            const player = byId.get(id);
-            if (player) {
-              ordered.push(player);
+        if (rosterOrderUsesIds(rosterOrder)) {
+          for (const entry of rosterOrder) {
+            if (typeof entry !== 'string') {
+              ordered.push(createEmptyBracketEntrant());
+              continue;
             }
+
+            ordered.push(byId.get(entry) || createEmptyBracketEntrant());
           }
         } else {
-          for (const player of first) {
-            ordered.push(player);
+          for (const player of rosterOrder) {
+            ordered.push(player ? clonePlayerRecord(player) : createEmptyBracketEntrant());
           }
         }
 
@@ -3394,12 +3595,7 @@
         const sourcePlayers = getBracketEntrants();
         const entrants = [...sourcePlayers];
         while (entrants.length < MAX_PLAYERS) {
-          entrants.push({
-            name: 'Waiting',
-            aura: '',
-            weak: '',
-            empty: true,
-          });
+          entrants.push(createEmptyBracketEntrant());
         }
 
         const rounds = [16, 8, 4, 2, 1];
@@ -3408,8 +3604,8 @@
 
         const slotSpacing = NODE_WIDTH + SLOT_GAP;
         const baseSvgWidth = X_PADDING * 2 + slotSpacing * (MAX_PLAYERS - 1);
-        const previewThirdPlaceEntrants = getThirdPlaceEntrantIndexes();
-        const showThirdPlacePanel = [0, 1].some((matchIndex) => getMatchParticipantIndexes(3, matchIndex).length === 2)
+        const previewThirdPlaceEntrants = getThirdPlaceEntrantIndexes(entrants);
+        const showThirdPlacePanel = [0, 1].some((matchIndex) => getMatchParticipantIndexes(3, matchIndex, entrants).length === 2)
           || previewThirdPlaceEntrants.some((entrantIndex) => entrantIndex !== undefined)
           || matchWinners[THIRD_PLACE_KEY] !== undefined;
         const svgWidth = baseSvgWidth + (showThirdPlacePanel ? THIRD_PLACE_PANEL_GAP + THIRD_PLACE_PANEL_WIDTH : 0);
@@ -3424,7 +3620,7 @@
         levelNodes[0] = entrants.slice(0, 16).map((p, idx) => ({
           x: X_PADDING + slotSpacing * idx,
           y: yBottom,
-          name: p.empty ? 'Empty slot' : `${idx + 1}. ${shortenPlayerName(p.name, 12)}`,
+          name: p.empty ? 'BYE' : `${idx + 1}. ${shortenPlayerName(p.name, 12)}`,
           aura: p.aura,
           weak: p.weak,
           isEmpty: !!p.empty,
@@ -3442,7 +3638,7 @@
               x: (a.x + b.x) / 2,
               y: yBottom - ROW_GAP * r,
               isLeaf: false,
-              isEmpty: a.isEmpty || b.isEmpty,
+              isEmpty: a.isEmpty && b.isEmpty,
             });
           }
           levelNodes[r] = level;
@@ -3482,8 +3678,7 @@
               profileData = makeProfileCardData(entrants[nodeIdx], `Slot ${nodeIdx + 1}`);
 
               if (!node.isEmpty && isRosterFinalized) {
-                const parentKey = `1-${Math.floor(nodeIdx / 2)}`;
-                const parentWinner = matchWinners[parentKey];
+                const parentWinner = getResolvedMatchWinner(1, Math.floor(nodeIdx / 2), entrants);
 
                 if (parentWinner === nodeIdx) {
                   isWinnerNode = true;
@@ -3499,8 +3694,7 @@
               }
             } else if (levelIdx === 4) {
               // Champion node
-              const champKey = '4-0';
-              const champIdx = matchWinners[champKey];
+              const champIdx = getResolvedMatchWinner(4, 0, entrants);
               if (champIdx !== undefined) {
                 const champPlayer = entrants[champIdx];
                 if (champPlayer && !champPlayer.empty) {
@@ -3515,8 +3709,7 @@
               }
             } else {
               // Levels 1-3: match nodes
-              const matchKey = `${levelIdx}-${nodeIdx}`;
-              const winnerIdx = matchWinners[matchKey];
+              const winnerIdx = getResolvedMatchWinner(levelIdx, nodeIdx, entrants);
 
               if (winnerIdx !== undefined) {
                 const winnerPlayer = entrants[winnerIdx];
@@ -3529,8 +3722,7 @@
                 );
 
                 // Check if this winner has been advanced to the parent
-                const parentKey = `${levelIdx + 1}-${Math.floor(nodeIdx / 2)}`;
-                const parentWinner = matchWinners[parentKey];
+                const parentWinner = getResolvedMatchWinner(levelIdx + 1, Math.floor(nodeIdx / 2), entrants);
                 if (parentWinner === winnerIdx) {
                   isWinnerNode = true;
                 } else if (parentWinner !== undefined) {
@@ -3583,7 +3775,7 @@
           const playoffReady = thirdPlaceEntrants.every((entrantIndex) => entrantIndex !== undefined);
           const rawThirdPlaceWinnerIdx = matchWinners[THIRD_PLACE_KEY];
           const thirdPlaceWinnerIdx = thirdPlaceEntrants.includes(rawThirdPlaceWinnerIdx) ? rawThirdPlaceWinnerIdx : undefined;
-          const fourthPlaceIdx = getFourthPlaceIndex(thirdPlaceWinnerIdx);
+          const fourthPlaceIdx = getFourthPlaceIndex(thirdPlaceWinnerIdx, entrants);
 
           drawPlacementPanel(
             thirdPlacePanelX,
@@ -3701,13 +3893,19 @@
         }
       }
 
-      async function deleteParticipant(playerIndex) {
-        if (!canUseAdminControls()) {
-          return;
+      function buildPromotedParticipantState(waitingPlayer, displacedPlayer, overrideId = waitingPlayer?.id) {
+        if (!waitingPlayer) {
+          return null;
         }
 
-        if (isRosterFinalized) {
-          shareStatus.textContent = 'Delete is disabled while roster is locked. Reset first.';
+        return clonePlayerRecord(waitingPlayer, {
+          id: overrideId || waitingPlayer.id,
+          createdAt: displacedPlayer?.createdAt ?? waitingPlayer.createdAt ?? Date.now(),
+        });
+      }
+
+      async function deleteParticipant(playerIndex) {
+        if (!canUseAdminControls()) {
           return;
         }
 
@@ -3717,18 +3915,41 @@
         }
 
         const player = players[index];
+        const waitingPlayer = waitingPlayers[0] || null;
 
-        if (!isFirebaseAvailable || !participantsRef || !player?.id) {
-          players.splice(index, 1);
-          persistLocalEventState();
-          renderPlayerList();
-          renderBracket();
+        if (!isFirebaseAvailable || !participantsRef || !eventRef || !player?.id) {
+          const promotedPlayer = buildPromotedParticipantState(waitingPlayer, player);
+          applyParticipantRemovalState(player, promotedPlayer, index);
           return;
         }
 
         try {
-          await remove(ref(participantsRef, player.id));
-          persistLocalEventState();
+          const updates = {
+            [`participants/${player.id}`]: null,
+            updatedAt: serverTimestamp(),
+          };
+
+          let promotedPlayer = null;
+
+          if (waitingPlayer?.id) {
+            promotedPlayer = buildPromotedParticipantState(waitingPlayer, player, waitingPlayer.id);
+            const { id: promotedPlayerId, ...promotedPayload } = promotedPlayer;
+            updates[`participants/${promotedPlayerId}`] = promotedPayload;
+            updates[`waitlist/${waitingPlayer.id}`] = null;
+          }
+
+          if (isRosterFinalized && rosterOrder.length) {
+            const slotIndex = findRosterSlotIndexForPlayer(player);
+            if (slotIndex !== -1) {
+              const nextOrder = [...rosterOrder];
+              nextOrder[slotIndex] = promotedPlayer ? buildRosterEntryForPlayer(promotedPlayer, nextOrder) : null;
+              updates.rosterOrder = nextOrder;
+              updates.matchWinners = pruneMatchWinnersForSlot(slotIndex, matchWinners);
+            }
+          }
+
+          await update(eventRef, updates);
+          applyParticipantRemovalState(player, promotedPlayer, index);
         } catch (error) {
           console.error(error);
           shareStatus.textContent = 'Unable to delete participant. Please verify your Firebase permissions.';

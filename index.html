@@ -361,6 +361,10 @@
         padding: 12px 14px;
       }
 
+      .player-row.has-profile {
+        cursor: help;
+      }
+
       .player-name {
         flex: 1;
         min-width: 0;
@@ -2383,6 +2387,7 @@
             setBracketFocusMode(false);
           }
         }
+        hideProfileCard(true);
         currentView = nextView;
         syncViewPanels();
         syncAdminControls();
@@ -2406,8 +2411,9 @@
         const profileLabel = listType === 'waitlist' ? `Waitlist ${index + 1}` : `Entry ${index + 1}`;
         const profileData = makeProfileCardData(player, profileLabel);
         if (profileData) {
+          row.classList.add('has-profile');
           text.classList.add('has-profile');
-          bindProfileCardInteractions(text, profileData, { enablePin: true });
+          bindProfileCardInteractions(row, profileData, { releasePinnedOnHover: true });
         }
         row.appendChild(text);
 
@@ -3518,14 +3524,44 @@
         });
       }
 
+      function releasePinnedProfileCardForHover(event, options = {}) {
+        const { releasePinnedOnHover = false } = options;
+        if (event.pointerType === 'touch') {
+          return false;
+        }
+
+        if (!isProfileCardPinned) {
+          return true;
+        }
+
+        if (!releasePinnedOnHover) {
+          return false;
+        }
+
+        hideProfileCard(true);
+        return true;
+      }
+
       function bindProfileCardInteractions(target, profileData, options = {}) {
         const { enablePin = false } = options;
         if (!target || !profileData) {
           return;
         }
 
-        target.addEventListener('pointerenter', (event) => handleProfilePointerEnter(event, profileData));
-        target.addEventListener('pointermove', (event) => handleProfilePointerMove(event, profileData));
+        target.addEventListener('pointerenter', (event) => {
+          if (!releasePinnedProfileCardForHover(event, options)) {
+            return;
+          }
+
+          handleProfilePointerEnter(event, profileData);
+        });
+        target.addEventListener('pointermove', (event) => {
+          if (!releasePinnedProfileCardForHover(event, options)) {
+            return;
+          }
+
+          handleProfilePointerMove(event, profileData);
+        });
         target.addEventListener('pointerleave', () => handleProfilePointerLeave(profileData));
 
         if (enablePin) {
@@ -4135,42 +4171,41 @@
         }
       }
 
+      function resetBracketProgressState() {
+        rosterOrder = [];
+        isRosterFinalized = false;
+        isSpectatorInsightsExpanded = false;
+        matchWinners = {};
+        setRosterShuffleMode(false);
+        bracketPanel.classList.remove('is-drawn');
+      }
+
       async function resetEventState() {
         if (!canUseAdminControls()) {
           return;
         }
 
         if (!isFirebaseAvailable || !participantsRef || !eventRef) {
-          players.length = 0;
-          waitingPlayers.length = 0;
-          spectatorVotes.length = 0;
-          rosterOrder = [];
-          isRosterFinalized = false;
-          isSpectatorInsightsExpanded = false;
-          matchWinners = {};
-          clearLocalEventState();
-          setRosterShuffleMode(false);
-          bracketPanel.classList.remove('is-drawn');
+          resetBracketProgressState();
+          persistLocalEventState();
           renderPlayerList();
+          renderSpectatorSection();
           renderBracket();
           return;
         }
 
         try {
-          await remove(participantsRef);
-          if (waitlistRef) {
-            await remove(waitlistRef);
-          }
-          if (spectatorVotesRef) {
-            await remove(spectatorVotesRef);
-          }
           await update(eventRef, {
             rosterOrder: [],
             isRosterFinalized: false,
             matchWinners: {},
             updatedAt: serverTimestamp(),
           });
-          clearLocalEventState();
+          resetBracketProgressState();
+          persistLocalEventState();
+          renderPlayerList();
+          renderSpectatorSection();
+          renderBracket();
         } catch (error) {
           console.error(error);
           shareStatus.textContent = 'Failed to reset tournament data.';

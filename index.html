@@ -1675,7 +1675,6 @@
 
       const DEFAULT_EVENT_ID = 'swanston-table-tennis-tournament';
       const MAX_PLAYERS = 16;
-      const FILL_TEST_PLAYERS_ON_LOAD = true;
       const ADMIN_SESSION_KEY = 'rk_tournament_admin_v1';
       const ADMIN_PASSWORD = 'admin1234';
       const form = document.getElementById('signupForm');
@@ -1927,12 +1926,42 @@
         shareStatus.textContent = 'Unable to connect to Firebase. Retrying...';
       }
 
-      function makeTestPlayers() {
-        return Array.from({ length: MAX_PLAYERS }, (_, index) => ({
-          name: `Test Player ${index + 1}`,
-          aura: 'Test aura',
-          weak: 'Test weak',
-        }));
+      function isLegacyTestPlayer(player) {
+        if (!player) {
+          return false;
+        }
+
+        return /^Test Player \d+$/.test(player.name || '')
+          && (player.aura || '') === 'Test aura'
+          && (player.weak || '') === 'Test weak';
+      }
+
+      function purgeLegacyTestDataFromLocalState() {
+        const nextPlayers = players.filter((player) => !isLegacyTestPlayer(player));
+        const nextWaitingPlayers = waitingPlayers.filter((player) => !isLegacyTestPlayer(player));
+        const removedLegacyPlayers = nextPlayers.length !== players.length
+          || nextWaitingPlayers.length !== waitingPlayers.length;
+
+        if (!removedLegacyPlayers) {
+          return false;
+        }
+
+        players.length = 0;
+        players.push(...nextPlayers);
+        waitingPlayers.length = 0;
+        waitingPlayers.push(...nextWaitingPlayers);
+
+        const validPickKeys = new Set(players.map((player) => getPlayerSelectionKey(player)));
+        const nextSpectatorVotes = spectatorVotes.filter((vote) => validPickKeys.has(vote.pickKey));
+        spectatorVotes.length = 0;
+        spectatorVotes.push(...nextSpectatorVotes);
+
+        rosterOrder = [];
+        isRosterFinalized = false;
+        matchWinners = {};
+        persistLocalEventState();
+        console.log('[RK Events] Cleared legacy test players from local state.');
+        return true;
       }
 
       function isRosterFull() {
@@ -2232,52 +2261,6 @@
       function getResolvedMatchWinner(level, matchIndex, entrants = getBracketEntrants()) {
         const resolution = getMatchResolution(level, matchIndex, entrants);
         return resolution.state === 'resolved' ? resolution.winnerIndex : undefined;
-      }
-
-      async function seedTestPlayersIfNeeded() {
-        if (!FILL_TEST_PLAYERS_ON_LOAD || players.length || waitingPlayers.length) {
-          return;
-        }
-
-        if (!isFirebaseAvailable || !participantsRef) {
-          players.length = 0;
-          waitingPlayers.length = 0;
-          players.push(...makeTestPlayers());
-          rosterOrder = [];
-          isRosterFinalized = false;
-          persistLocalEventState();
-          renderPlayerList();
-          renderBracket();
-          return;
-        }
-
-        try {
-          const [participantsSnapshot, waitlistSnapshot] = await Promise.all([
-            get(participantsRef),
-            waitlistRef ? get(waitlistRef) : Promise.resolve(null),
-          ]);
-          if (participantsSnapshot.exists() || waitlistSnapshot?.exists()) {
-            return;
-          }
-
-          const seededPlayers = makeTestPlayers();
-          await Promise.all(
-            seededPlayers.map((player) =>
-              set(push(participantsRef), {
-                ...player,
-                createdAt: serverTimestamp(),
-              }),
-            ),
-          );
-        } catch (error) {
-          console.error('[RK Events] Failed to seed test players:', error);
-          shareStatus.textContent = 'Unable to seed test players. Using local placeholders instead.';
-          players.length = 0;
-          players.push(...makeTestPlayers());
-          persistLocalEventState();
-          renderPlayerList();
-          renderBracket();
-        }
       }
 
       function isAdmin() {
@@ -3020,6 +3003,8 @@
             spectatorVotes.length = 0;
             state.spectatorVotes.forEach((vote) => spectatorVotes.push(vote));
           }
+
+          purgeLegacyTestDataFromLocalState();
         } catch (error) {
           console.error(error);
         }
@@ -4531,7 +4516,6 @@
           bindEventRefs();
           await ensureEventDocument();
 
-          await seedTestPlayersIfNeeded();
           applyDatabaseSnapshots();
           console.log('[RK Events] Firebase connected. Real-time listeners active.');
           shareStatus.textContent = 'Live sync enabled. Share this page to collect registrations.';

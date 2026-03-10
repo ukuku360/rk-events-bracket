@@ -289,6 +289,7 @@
 
       .user-card {
         min-width: 0;
+        min-height: 0;
       }
 
       .registration-panel {
@@ -485,15 +486,15 @@
         position: fixed;
         top: 50%;
         left: 50%;
-        width: min(1120px, calc(100vw - 32px));
+        width: min(960px, calc(100vw - 32px));
         max-height: min(88vh, 920px);
         margin: 0;
-        padding: 24px;
+        padding: 22px;
         border: 4px solid var(--black);
-        border-radius: 22px;
+        border-radius: 24px;
         background:
-          radial-gradient(circle at top right, rgba(255, 207, 0, 0.42), transparent 34%),
-          linear-gradient(160deg, #121212 0%, #25124b 58%, #0b446b 100%);
+          radial-gradient(circle at top right, rgba(255, 207, 0, 0.28), transparent 30%),
+          linear-gradient(155deg, #111321 0%, #201648 48%, #0c466d 100%);
         color: var(--white);
         box-shadow: 12px 12px 0px var(--black);
         transform: translate(-50%, -50%);
@@ -504,20 +505,23 @@
       .spectator-insights-toolbar {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
       }
 
       .spectator-insights-close {
-        padding: 10px 14px;
+        padding: 9px 14px;
         background: var(--brand-yellow);
         color: var(--black);
+        border-radius: 999px;
+        font-size: 13px;
+        box-shadow: 4px 4px 0px var(--black);
       }
 
       .spectator-insights-headline {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 16px;
+        gap: 20px;
         margin-bottom: 18px;
         flex-wrap: wrap;
       }
@@ -539,7 +543,7 @@
       .spectator-insights-title {
         margin: 0;
         font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 800;
         line-height: 0.95;
         letter-spacing: -0.04em;
@@ -548,19 +552,18 @@
 
       .spectator-insights-caption {
         margin: 0;
-        max-width: 28ch;
-        font-size: 13px;
+        max-width: 26ch;
+        font-size: 12px;
         font-weight: 800;
-        line-height: 1.5;
+        line-height: 1.6;
         text-align: right;
-        color: rgba(255, 255, 255, 0.82);
+        color: rgba(255, 255, 255, 0.74);
       }
 
       .spectator-insights-summary,
-      .spectator-insights-podium,
       .spectator-insights-chart {
         display: grid;
-        gap: 12px;
+        gap: 14px;
       }
 
       .spectator-insights-summary {
@@ -568,7 +571,6 @@
       }
 
       .spectator-insight-stat,
-      .spectator-podium-card,
       .spectator-chart-row {
         animation: spectatorDropIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
         animation-delay: calc(var(--order, 0) * 70ms);
@@ -576,15 +578,16 @@
 
       .spectator-insight-stat {
         min-width: 0;
-        padding: 14px;
-        border-radius: 18px;
-        border: 3px solid rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.12);
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.09);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
       }
 
       .spectator-insight-label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 11px;
         font-weight: 900;
         letter-spacing: 0.08em;
@@ -595,15 +598,16 @@
       .spectator-insight-value {
         margin: 0;
         font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 800;
         line-height: 1;
         letter-spacing: -0.03em;
         text-transform: uppercase;
+        overflow-wrap: anywhere;
       }
 
       .spectator-insight-detail {
-        margin: 8px 0 0;
+        margin: 10px 0 0;
         font-size: 12px;
         font-weight: 800;
         line-height: 1.4;
@@ -611,81 +615,100 @@
       }
 
       .spectator-insights-podium {
+        margin-top: 0;
+      }
+
+      .spectator-insights-chart {
         margin-top: 16px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
 
-      .spectator-podium-card {
-        min-width: 0;
-        padding: 14px;
+      .spectator-chart-panel {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(8, 10, 20, 0.32);
+      }
+
+      .spectator-chart-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .spectator-chart-title {
+        margin: 0;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+      }
+
+      .spectator-chart-note {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .spectator-chart-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .spectator-chart-row {
+        display: grid;
+        gap: 10px;
+        padding: 14px 16px;
         border-radius: 18px;
-        border: 3px solid var(--black);
-        color: var(--black);
-        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
       }
 
-      .spectator-podium-card.rank-1 {
-        background: linear-gradient(180deg, #ffcf00 0%, #fff2a6 100%);
+      .spectator-chart-row.is-leader {
+        border-color: rgba(255, 207, 0, 0.58);
+        background: rgba(255, 207, 0, 0.1);
       }
 
-      .spectator-podium-card.rank-2 {
-        background: linear-gradient(180deg, #9ef5ff 0%, #e9fdff 100%);
+      .spectator-chart-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
       }
 
-      .spectator-podium-card.rank-3 {
-        background: linear-gradient(180deg, #ff8baa 0%, #ffd9e6 100%);
+      .spectator-chart-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
       }
 
-      .spectator-podium-rank {
+      .spectator-chart-rank {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 38px;
-        padding: 6px 10px;
+        min-width: 36px;
+        padding: 5px 10px;
         border-radius: 999px;
-        border: 2px solid var(--black);
-        background: rgba(255, 255, 255, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.08);
         font-size: 11px;
         font-weight: 900;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      .spectator-podium-name {
-        margin: 12px 0 6px;
-        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
-        font-size: 22px;
-        font-weight: 800;
-        line-height: 0.95;
-        letter-spacing: -0.03em;
-        text-transform: uppercase;
-        overflow-wrap: anywhere;
-      }
-
-      .spectator-podium-meta {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 900;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .spectator-insights-chart {
-        margin-top: 16px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: start;
-      }
-
-      .spectator-chart-row {
-        display: grid;
-        grid-template-columns: minmax(0, 118px) minmax(0, 1fr) auto;
-        gap: 12px;
-        align-items: center;
-      }
-
       .spectator-chart-name {
         min-width: 0;
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 900;
         letter-spacing: 0.03em;
         text-transform: uppercase;
@@ -696,9 +719,9 @@
 
       .spectator-chart-track {
         position: relative;
-        height: 18px;
+        height: 14px;
         min-width: 0;
-        border: 2px solid rgba(255, 255, 255, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.22);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.1);
         overflow: hidden;
@@ -719,7 +742,15 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
         white-space: nowrap;
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .spectator-chart-footer {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.68);
       }
 
       .spectator-votes,
@@ -836,8 +867,11 @@
         display: flex;
         flex-direction: column;
         background: linear-gradient(180deg, #fffef8 0%, #fff7d6 100%);
-        min-height: 100%;
+        height: 100%;
+        min-height: 0;
         min-width: 0;
+        align-self: stretch;
+        overflow: hidden;
       }
 
       .entries-content {
@@ -845,6 +879,27 @@
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
+        overflow: hidden;
+      }
+
+      .entries-scroll-area {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 6px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--black) transparent;
+      }
+
+      .entries-scroll-area::-webkit-scrollbar { width: 12px; }
+      .entries-scroll-area::-webkit-scrollbar-thumb { background: var(--black); border: 2px solid var(--white); border-radius: 6px; }
+
+      .entries-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
       }
 
       .entries-count {
@@ -863,21 +918,22 @@
       }
 
       .entries-panel .players {
-        margin-top: 18px;
-        flex: 1 1 auto;
-        min-height: 0;
+        margin-top: 0;
+        flex: 0 0 auto;
+        min-height: auto;
         max-height: none;
+        overflow: visible;
       }
 
       .waitlist-section {
-        margin-top: 18px;
+        margin-top: 0;
         padding-top: 18px;
         border-top: 3px dashed var(--black);
         display: flex;
         flex-direction: column;
         gap: 12px;
-        min-height: 0;
-        flex: 0 0 clamp(120px, 28%, 180px);
+        min-height: auto;
+        flex: 0 0 auto;
       }
 
       .waitlist-head {
@@ -902,8 +958,9 @@
 
       .waitlist-players {
         margin-top: 0 !important;
-        flex: 1 1 auto;
-        min-height: 0;
+        flex: 0 0 auto;
+        min-height: auto;
+        overflow: visible;
       }
 
       .warriors-layout .registration-panel,
@@ -1440,14 +1497,8 @@
         }
 
         .spectator-insights-summary,
-        .spectator-insights-podium,
         .spectator-insights-chart {
           grid-template-columns: 1fr;
-        }
-
-        .spectator-chart-row {
-          grid-template-columns: 1fr;
-          gap: 8px;
         }
 
         .spectator-insights-caption {
@@ -1462,6 +1513,10 @@
 
         .spectator-insights-close {
           width: auto;
+        }
+
+        .spectator-chart-head {
+          align-items: flex-start;
         }
       }
 
@@ -1539,7 +1594,7 @@
                 <button type="button" id="adminLogoutButton" class="hidden">Log Out</button>
               </div>
               <div class="actions hidden" id="adminActionGroup">
-                <button type="button" id="adminSpectatorInsightsButton" class="spectator-insights-toggle" aria-expanded="false" aria-controls="spectatorInsightsPanel">Open Vote Dashboard</button>
+                <button type="button" id="adminSpectatorInsightsButton" class="spectator-insights-toggle" aria-expanded="false" aria-controls="spectatorInsightsPanel">Open Vote Summary</button>
                 <button type="button" id="clearButton">Reset</button>
               </div>
             </section>
@@ -1597,14 +1652,16 @@
             <h2 id="entriesTitle">Entries</h2>
             <div class="entries-content">
               <p class="entries-count" id="countText">Entries: 0 / 16</p>
-              <ul class="players" id="playerList"></ul>
-              <section class="waitlist-section hidden" id="waitlistSection" aria-labelledby="waitlistCountText">
-                <div class="waitlist-head">
-                  <p class="entries-count waitlist-count" id="waitlistCountText">Waitlist: 0</p>
-                  <p class="waitlist-note">Late signups queue here.</p>
-                </div>
-                <ul class="players waitlist-players" id="waitlistPlayerList"></ul>
-              </section>
+              <div class="entries-scroll-area">
+                <ul class="players" id="playerList"></ul>
+                <section class="waitlist-section hidden" id="waitlistSection" aria-labelledby="waitlistCountText">
+                  <div class="waitlist-head">
+                    <p class="entries-count waitlist-count" id="waitlistCountText">Waitlist: 0</p>
+                    <p class="waitlist-note">Late signups queue here.</p>
+                  </div>
+                  <ul class="players waitlist-players" id="waitlistPlayerList"></ul>
+                </section>
+              </div>
             </div>
             </section>
           </div>
@@ -1639,7 +1696,7 @@
     <div class="spectator-insights-overlay hidden" id="spectatorInsightsOverlay" aria-hidden="true"></div>
     <section class="spectator-insights hidden" id="spectatorInsightsPanel" aria-hidden="true" aria-modal="true" role="dialog">
       <div class="spectator-insights-toolbar">
-        <button type="button" id="spectatorInsightsCloseButton" class="spectator-insights-close">Close Dashboard</button>
+        <button type="button" id="spectatorInsightsCloseButton" class="spectator-insights-close">Close</button>
       </div>
       <div class="spectator-insights-headline">
         <div>
@@ -1806,6 +1863,41 @@
         return registrationPanel;
       }
 
+      function measureEntriesReferenceHeight(referencePanel) {
+        const lockedWidth = Math.round(entriesPanel.getBoundingClientRect().width);
+        const previousStyles = {
+          height: entriesPanel.style.height,
+          position: entriesPanel.style.position,
+          visibility: entriesPanel.style.visibility,
+          pointerEvents: entriesPanel.style.pointerEvents,
+          width: entriesPanel.style.width,
+        };
+
+        entriesPanel.style.height = 'auto';
+        entriesPanel.style.position = 'absolute';
+        entriesPanel.style.visibility = 'hidden';
+        entriesPanel.style.pointerEvents = 'none';
+        if (lockedWidth) {
+          entriesPanel.style.width = `${lockedWidth}px`;
+        } else {
+          entriesPanel.style.removeProperty('width');
+        }
+
+        const nextHeight = Math.round(referencePanel.getBoundingClientRect().height);
+
+        entriesPanel.style.height = previousStyles.height;
+        entriesPanel.style.position = previousStyles.position;
+        entriesPanel.style.visibility = previousStyles.visibility;
+        entriesPanel.style.pointerEvents = previousStyles.pointerEvents;
+        if (previousStyles.width) {
+          entriesPanel.style.width = previousStyles.width;
+        } else {
+          entriesPanel.style.removeProperty('width');
+        }
+
+        return nextHeight;
+      }
+
       function syncEntriesPanelHeight() {
         if (!entriesPanel.isConnected) {
           return;
@@ -1817,7 +1909,22 @@
           return;
         }
 
-        const nextHeight = Math.round(referencePanel.getBoundingClientRect().height);
+        const layoutSlot = entriesPanel.parentElement;
+        if (layoutSlot) {
+          const columnCount = window
+            .getComputedStyle(layoutSlot)
+            .gridTemplateColumns
+            .split(' ')
+            .filter(Boolean)
+            .length;
+
+          if (columnCount < 2) {
+            entriesPanel.style.removeProperty('height');
+            return;
+          }
+        }
+
+        const nextHeight = measureEntriesReferenceHeight(referencePanel);
         if (!nextHeight) {
           entriesPanel.style.removeProperty('height');
           return;
@@ -2549,7 +2656,10 @@
           ? standings.filter((entry) => entry.votes === leaderVotes)
           : [];
         const runnerUp = standings.find((entry) => entry.votes < leaderVotes) || null;
-        const supportedPlayersCount = standings.filter((entry) => entry.votes > 0).length;
+        const supportedStandings = standings.filter((entry) => entry.votes > 0);
+        const supportedPlayersCount = standings.filter((entry) =>
+          entry.votes > 0 && entry.order < players.length,
+        ).length;
 
         return {
           totalVotes,
@@ -2558,7 +2668,8 @@
           leaders,
           runnerUp,
           supportedPlayersCount,
-          topThree: standings.filter((entry) => entry.votes > 0).slice(0, 3),
+          supportedStandings,
+          unsupportedPlayersCount: Math.max(players.length - supportedPlayersCount, 0),
           maxVotes: Math.max(leaderVotes, 1),
         };
       }
@@ -2586,38 +2697,36 @@
         return card;
       }
 
-      function makeSpectatorPodiumCard(entry, rankIndex) {
-        const card = document.createElement('article');
-        card.className = `spectator-podium-card rank-${Math.min(rankIndex + 1, 3)}`;
-        card.style.setProperty('--order', String(rankIndex));
-
-        const rank = document.createElement('span');
-        rank.className = 'spectator-podium-rank';
-        rank.textContent = `#${rankIndex + 1}`;
-        card.appendChild(rank);
-
-        const name = document.createElement('h5');
-        name.className = 'spectator-podium-name';
-        name.textContent = entry.name;
-        card.appendChild(name);
-
-        const meta = document.createElement('p');
-        meta.className = 'spectator-podium-meta';
-        meta.textContent = `${entry.votes} vote${entry.votes === 1 ? '' : 's'} · ${formatVoteShare(entry.votes, spectatorVotes.length)}`;
-        card.appendChild(meta);
-
-        return card;
-      }
-
       function makeSpectatorChartRow(entry, maxVotes, totalVotes, index) {
         const row = document.createElement('article');
         row.className = 'spectator-chart-row';
         row.style.setProperty('--order', String(index));
+        if (index === 0) {
+          row.classList.add('is-leader');
+        }
+
+        const head = document.createElement('div');
+        head.className = 'spectator-chart-head';
+
+        const main = document.createElement('div');
+        main.className = 'spectator-chart-main';
+
+        const rank = document.createElement('span');
+        rank.className = 'spectator-chart-rank';
+        rank.textContent = `#${index + 1}`;
+        main.appendChild(rank);
 
         const name = document.createElement('span');
         name.className = 'spectator-chart-name';
         name.textContent = entry.name;
-        row.appendChild(name);
+        main.appendChild(name);
+        head.appendChild(main);
+
+        const value = document.createElement('span');
+        value.className = 'spectator-chart-value';
+        value.textContent = `${entry.votes} vote${entry.votes === 1 ? '' : 's'} · ${formatVoteShare(entry.votes, totalVotes)}`;
+        head.appendChild(value);
+        row.appendChild(head);
 
         const track = document.createElement('div');
         track.className = 'spectator-chart-track';
@@ -2628,12 +2737,46 @@
         track.appendChild(fill);
         row.appendChild(track);
 
-        const value = document.createElement('span');
-        value.className = 'spectator-chart-value';
-        value.textContent = `${entry.votes} · ${formatVoteShare(entry.votes, totalVotes)}`;
-        row.appendChild(value);
-
         return row;
+      }
+
+      function makeSpectatorChartPanel(insights) {
+        const panel = document.createElement('section');
+        panel.className = 'spectator-chart-panel';
+
+        const header = document.createElement('div');
+        header.className = 'spectator-chart-header';
+
+        const title = document.createElement('h5');
+        title.className = 'spectator-chart-title';
+        title.textContent = 'Supported Picks';
+        header.appendChild(title);
+
+        const note = document.createElement('p');
+        note.className = 'spectator-chart-note';
+        note.textContent = insights.unsupportedPlayersCount
+          ? `${insights.supportedStandings.length} players have support. ${insights.unsupportedPlayersCount} are still on 0 votes.`
+          : 'Only players with votes are shown.';
+        header.appendChild(note);
+        panel.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'spectator-chart-list';
+        insights.supportedStandings.forEach((entry, index) => {
+          list.appendChild(
+            makeSpectatorChartRow(entry, insights.maxVotes, insights.totalVotes, index),
+          );
+        });
+        panel.appendChild(list);
+
+        if (insights.unsupportedPlayersCount) {
+          const footer = document.createElement('p');
+          footer.className = 'spectator-chart-footer';
+          footer.textContent = `${insights.unsupportedPlayersCount} player${insights.unsupportedPlayersCount === 1 ? '' : 's'} currently have no audience backing.`;
+          panel.appendChild(footer);
+        }
+
+        return panel;
       }
 
       function closeSpectatorInsightsModal() {
@@ -2676,20 +2819,22 @@
           ? `${insights.leaders.length}-way tie`
           : insights.leaders[0]?.name || 'No leader yet';
         const leaderDetail = insights.leaders.length > 1
-          ? `${insights.leaderVotes} votes each at the top`
-          : `${insights.leaderVotes} vote${insights.leaderVotes === 1 ? '' : 's'} on the board`;
+          ? `${insights.leaderVotes} votes each`
+          : `${insights.leaderVotes} vote${insights.leaderVotes === 1 ? '' : 's'} · ${formatVoteShare(insights.leaderVotes, insights.totalVotes)}`;
         const gapVotes = insights.runnerUp ? insights.leaderVotes - insights.runnerUp.votes : 0;
-        const runnerDetail = insights.runnerUp
-          ? `${gapVotes} vote${gapVotes === 1 ? '' : 's'} clear of ${insights.runnerUp.name}`
-          : 'No chase pack yet';
+        const runnerDetail = insights.leaders.length > 1
+          ? `${insights.leaders.length} players share first place`
+          : insights.runnerUp
+          ? `Ahead of ${insights.runnerUp.name}`
+          : 'No one else has support yet';
 
         spectatorInsightsCaption.textContent = hasTournamentStarted()
-          ? 'Admin-only view. Compare the audience vote map with the live bracket.'
-          : 'Admin-only view. Check who the room is backing before the first serve.';
+          ? 'Admin-only snapshot of current audience picks.'
+          : 'Admin-only snapshot before the first serve.';
 
         spectatorInsightsSummary.appendChild(
           makeSpectatorInsightStat(
-            'Votes In',
+            'Total Votes',
             String(insights.totalVotes),
             `${insights.supportedPlayersCount} player${insights.supportedPlayersCount === 1 ? '' : 's'} received support`,
             0,
@@ -2697,7 +2842,7 @@
         );
         spectatorInsightsSummary.appendChild(
           makeSpectatorInsightStat(
-            'Front-runner',
+            'Leader',
             leaderLabel,
             leaderDetail,
             1,
@@ -2705,22 +2850,14 @@
         );
         spectatorInsightsSummary.appendChild(
           makeSpectatorInsightStat(
-            'Race Gap',
-            insights.runnerUp ? `${gapVotes} vote${gapVotes === 1 ? '' : 's'}` : 'Clear Lead',
+            'Margin',
+            insights.leaders.length > 1 ? 'Tied' : insights.runnerUp ? `+${gapVotes}` : 'Clear',
             runnerDetail,
             2,
           ),
         );
-
-        insights.topThree.forEach((entry, index) => {
-          spectatorInsightsPodium.appendChild(makeSpectatorPodiumCard(entry, index));
-        });
-
-        insights.standings.forEach((entry, index) => {
-          spectatorInsightsChart.appendChild(
-            makeSpectatorChartRow(entry, insights.maxVotes, insights.totalVotes, index),
-          );
-        });
+        spectatorInsightsPodium.classList.add('hidden');
+        spectatorInsightsChart.appendChild(makeSpectatorChartPanel(insights));
       }
 
       function handleSpectatorInsightsToggle() {
@@ -4456,6 +4593,7 @@
       }
       resizeConfettiCanvas();
       window.addEventListener('resize', resizeConfettiCanvas);
+      window.addEventListener('resize', queueEntriesPanelHeightSync);
 
       function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
         let rot = (Math.PI / 2) * 3;

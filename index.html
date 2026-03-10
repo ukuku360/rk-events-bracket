@@ -1964,6 +1964,22 @@
         return true;
       }
 
+      function snapshotToPlayerRecords(snapshot) {
+        const records = [];
+        if (!snapshot?.exists()) {
+          return records;
+        }
+
+        snapshot.forEach((docItem) => {
+          records.push({
+            id: docItem.key,
+            ...docItem.val(),
+          });
+        });
+
+        return records;
+      }
+
       function isRosterFull() {
         return players.length >= MAX_PLAYERS;
       }
@@ -2927,6 +2943,45 @@
         });
       }
 
+      async function purgeLegacyTestDataRemotelyIfNeeded() {
+        if (!eventRef || !participantsRef) {
+          return false;
+        }
+
+        const [participantsSnapshot, waitlistSnapshot] = await Promise.all([
+          get(participantsRef),
+          waitlistRef ? get(waitlistRef) : Promise.resolve(null),
+        ]);
+
+        const participantRecords = snapshotToPlayerRecords(participantsSnapshot);
+        const waitlistRecords = snapshotToPlayerRecords(waitlistSnapshot);
+        const hasParticipantRecords = participantRecords.length > 0;
+        const hasWaitlistRecords = waitlistRecords.length > 0;
+        const hasLegacyData = hasParticipantRecords || hasWaitlistRecords;
+
+        if (!hasLegacyData) {
+          return false;
+        }
+
+        const participantsAreLegacyOnly = participantRecords.every((player) => isLegacyTestPlayer(player));
+        const waitlistIsLegacyOnly = waitlistRecords.every((player) => isLegacyTestPlayer(player));
+        if (!participantsAreLegacyOnly || !waitlistIsLegacyOnly) {
+          return false;
+        }
+
+        await update(eventRef, {
+          participants: null,
+          waitlist: null,
+          rosterOrder: null,
+          isRosterFinalized: false,
+          matchWinners: null,
+          alertBanner: null,
+          updatedAt: serverTimestamp(),
+        });
+        console.log('[RK Events] Cleared legacy test players from Firebase.');
+        return true;
+      }
+
       async function retryFirebaseConnection() {
         if (firebaseRetryCount >= FIREBASE_MAX_RETRIES) {
           console.warn(`[RK Events] Firebase retry limit reached (${FIREBASE_MAX_RETRIES}).`);
@@ -2947,6 +3002,7 @@
           }
           bindEventRefs();
           await ensureEventDocument();
+          await purgeLegacyTestDataRemotelyIfNeeded();
 
           isFirebaseAvailable = true;
           firebaseRetryCount = 0;
@@ -4515,6 +4571,7 @@
           db = getDatabase(app);
           bindEventRefs();
           await ensureEventDocument();
+          await purgeLegacyTestDataRemotelyIfNeeded();
 
           applyDatabaseSnapshots();
           console.log('[RK Events] Firebase connected. Real-time listeners active.');

@@ -269,9 +269,12 @@
       }
 
       .warriors-layout,
-      .supporters-layout,
-      .admin-slot-grid {
+      .supporters-layout {
         grid-template-columns: minmax(0, 1.16fr) minmax(320px, 0.84fr);
+      }
+
+      .admin-slot-grid {
+        grid-template-columns: 1fr;
       }
 
       .admin-view {
@@ -1792,8 +1795,12 @@
         : null;
 
       function getEntriesReferencePanel() {
-        if (currentView === 'supporters' || currentView === 'admin') {
+        if (currentView === 'supporters') {
           return spectatorPanelCard;
+        }
+
+        if (currentView === 'admin') {
+          return null;
         }
 
         return registrationPanel;
@@ -2344,7 +2351,7 @@
           return;
         }
 
-        adminSlot.append(spectatorPanelCard, entriesPanel);
+        adminSlot.append(entriesPanel);
       }
 
       function syncViewPanels() {

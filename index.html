@@ -361,12 +361,19 @@
         padding: 12px 14px;
       }
 
-      .player-row span {
+      .player-name {
         flex: 1;
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 16px;
+      }
+
+      .player-name.has-profile {
+        cursor: help;
+        text-decoration: underline dotted rgba(17, 17, 17, 0.4);
+        text-underline-offset: 0.18em;
       }
 
       .spectator-panel {
@@ -2395,7 +2402,14 @@
         row.className = 'player-row';
 
         const text = document.createElement('span');
+        text.className = 'player-name';
         text.textContent = player.name;
+        const profileLabel = listType === 'waitlist' ? `Waitlist ${index + 1}` : `Entry ${index + 1}`;
+        const profileData = makeProfileCardData(player, profileLabel);
+        if (profileData) {
+          text.classList.add('has-profile');
+          bindProfileCardInteractions(text, profileData, { enablePin: true });
+        }
         row.appendChild(text);
 
         if (showDeleteButton) {
@@ -3463,6 +3477,24 @@
         });
       }
 
+      function bindProfileCardInteractions(target, profileData, options = {}) {
+        const { enablePin = false } = options;
+        if (!target || !profileData) {
+          return;
+        }
+
+        target.addEventListener('pointerenter', (event) => handleProfilePointerEnter(event, profileData));
+        target.addEventListener('pointermove', (event) => handleProfilePointerMove(event, profileData));
+        target.addEventListener('pointerleave', () => handleProfilePointerLeave(profileData));
+
+        if (enablePin) {
+          target.addEventListener('click', (event) => {
+            event.stopPropagation();
+            handleProfileCardPin(event, profileData);
+          });
+        }
+      }
+
       function makeNode(x, y, textPrimary, textMeta, isLeaf, isEmpty, options = {}) {
         const {
           clickable = false,
@@ -3515,13 +3547,7 @@
         }
 
         if (profileData) {
-          g.addEventListener('pointerenter', (event) => handleProfilePointerEnter(event, profileData));
-          g.addEventListener('pointermove', (event) => handleProfilePointerMove(event, profileData));
-          g.addEventListener('pointerleave', () => handleProfilePointerLeave(profileData));
-
-          if (!clickable) {
-            g.addEventListener('click', (event) => handleProfileCardPin(event, profileData));
-          }
+          bindProfileCardInteractions(g, profileData, { enablePin: !clickable });
         }
 
         nodesLayer.appendChild(g);

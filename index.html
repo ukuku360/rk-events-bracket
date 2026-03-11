@@ -1554,7 +1554,7 @@
 
       body.bracket-focus .page {
         max-width: none;
-        padding: 24px;
+        padding: 16px;
       }
 
       body.bracket-focus .content {
@@ -1569,7 +1569,16 @@
       }
 
       body.bracket-focus .bracket-shell {
-        max-height: calc(100vh - 140px);
+        max-height: calc(100vh - 124px);
+        overflow-x: hidden;
+      }
+
+      body.bracket-focus #bracketSvg {
+        width: 100%;
+        height: auto;
+        min-width: 0;
+        min-height: 0;
+        padding: 12px;
       }
 
       @keyframes spin {
@@ -1957,18 +1966,18 @@
       const profileCardAura = document.getElementById('profileCardAura');
       const profileCardWeak = document.getElementById('profileCardWeak');
 
-      const NODE_WIDTH = 136;
+      const NODE_WIDTH = 124;
       const NODE_HEIGHT = 42;
       const NODE_TEXT_MAX_WIDTH = NODE_WIDTH - 20;
       const NODE_TEXT_BASE_FONT_SIZE = 14;
       const NODE_TEXT_MIN_FONT_SIZE = 10;
       const THIRD_PLACE_KEY = 'third-0';
-      const THIRD_PLACE_PANEL_WIDTH = 420;
-      const THIRD_PLACE_PANEL_GAP = 44;
+      const THIRD_PLACE_PANEL_WIDTH = 396;
+      const THIRD_PLACE_PANEL_GAP = 32;
       const PROFILE_CARD_MARGIN = 16;
       const PROFILE_CARD_GAP = 18;
-      const SLOT_GAP = 22;
-      const X_PADDING = 84;
+      const SLOT_GAP = 16;
+      const X_PADDING = 60;
       const TOP_PADDING = 76;
       const ROW_GAP = 132;
       const BOTTOM_PADDING = 48;
@@ -4286,7 +4295,7 @@
                 const winnerPlayer = entrants[winnerIdx];
                 textPrimary = winnerPlayer && !winnerPlayer.empty
                   ? shortenPlayerName(winnerPlayer.name, 12)
-                  : 'Winner to be decided';
+                  : '?';
                 profileData = makeProfileCardData(
                   winnerPlayer,
                   levelIdx === 1 ? 'Round 1 Winner' : levelIdx === 2 ? 'Quarterfinal Winner' : 'Finalist',
@@ -4308,7 +4317,7 @@
                   onClick = (e) => selectWinner(lvl, mi, wi, e.clientX, e.clientY);
                 }
               } else {
-                textPrimary = 'Winner to be decided';
+                textPrimary = '?';
               }
             }
 

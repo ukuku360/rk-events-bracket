@@ -474,7 +474,8 @@
         color: var(--white);
       }
 
-      .spectator-insights-overlay {
+      .spectator-insights-overlay,
+      .spectator-prize-overlay {
         position: fixed;
         inset: 0;
         background: rgba(17, 17, 17, 0.68);
@@ -838,6 +839,16 @@
         line-height: 1.4;
       }
 
+      .spectator-prize-actions {
+        margin-top: 18px;
+      }
+
+      .spectator-prize-reveal {
+        width: 100%;
+        background: linear-gradient(135deg, #111111 0%, #3a2510 100%);
+        color: var(--brand-yellow);
+      }
+
       .reward-winners li {
         background: #fffef8;
         animation: spectatorDropIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -861,6 +872,112 @@
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.07em;
+      }
+
+      .spectator-prize-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: min(880px, calc(100vw - 32px));
+        max-height: min(88vh, 920px);
+        margin: 0;
+        padding: 22px;
+        border: 4px solid var(--black);
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 28%),
+          linear-gradient(135deg, #ffd200 0%, #ffef8d 48%, #fff8dd 100%);
+        color: var(--black);
+        box-shadow: 12px 12px 0px var(--black);
+        transform: translate(-50%, -50%);
+        overflow: auto;
+        z-index: 10012;
+      }
+
+      .spectator-prize-modal-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 14px;
+      }
+
+      .spectator-prize-close {
+        padding: 9px 14px;
+        background: var(--white);
+        color: var(--black);
+        border-radius: 999px;
+        font-size: 13px;
+        box-shadow: 4px 4px 0px var(--black);
+      }
+
+      .spectator-prize-modal-headline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+
+      .spectator-prize-modal-kicker {
+        margin: 0 0 10px;
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: var(--white);
+        border: 3px solid var(--black);
+        box-shadow: 3px 3px 0px var(--black);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .spectator-prize-modal-title {
+        margin: 0;
+        font-family: 'Bricolage Grotesque', 'Noto Sans KR', sans-serif;
+        font-size: clamp(34px, 6vw, 56px);
+        font-weight: 800;
+        line-height: 0.92;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        max-width: 11ch;
+      }
+
+      .spectator-prize-modal-note {
+        margin: 0;
+        max-width: 26ch;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.6;
+        text-align: right;
+      }
+
+      .reward-winners-modal {
+        margin-top: 0;
+        gap: 14px;
+      }
+
+      .reward-winners-modal li {
+        padding: 18px 20px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.86);
+      }
+
+      .reward-winners-modal li.placeholder {
+        text-align: center;
+      }
+
+      .reward-winners-modal .reward-winner-name {
+        font-size: clamp(22px, 3vw, 28px);
+        letter-spacing: -0.02em;
+      }
+
+      .reward-winners-modal .reward-winner-tag {
+        margin-top: 10px;
+        padding: 6px 12px;
+        font-size: 12px;
       }
 
       .entries-panel {
@@ -1424,6 +1541,7 @@
         background: var(--brand-alt);
       }
 
+      body.modal-open,
       body.spectator-insights-open {
         overflow: hidden;
       }
@@ -1511,8 +1629,18 @@
           padding: 18px;
         }
 
+        .spectator-prize-modal {
+          width: calc(100vw - 20px);
+          max-height: calc(100vh - 20px);
+          padding: 18px;
+        }
+
         .spectator-insights-close {
           width: auto;
+        }
+
+        .spectator-prize-modal-note {
+          text-align: left;
         }
 
         .spectator-chart-head {
@@ -1644,7 +1772,9 @@
               <span class="spectator-prize-badge">Prize Drop</span>
               <h3 class="spectator-prize-title" id="spectatorPrizeTitle">Champion Callers</h3>
               <p class="spectator-prize-note" id="spectatorPrizeNote">Winning spectators will show up here once the champion is locked.</p>
-              <ul class="reward-winners" id="spectatorWinnerList"></ul>
+              <div class="spectator-prize-actions">
+                <button type="button" id="spectatorPrizeRevealButton" class="spectator-prize-reveal" aria-controls="spectatorPrizeModal" aria-expanded="false">Reveal Who Called It</button>
+              </div>
             </div>
             </section>
 
@@ -1710,6 +1840,21 @@
       <div class="spectator-insights-chart" id="spectatorInsightsChart"></div>
     </section>
 
+    <div class="spectator-prize-overlay hidden" id="spectatorPrizeOverlay" aria-hidden="true"></div>
+    <section class="spectator-prize-modal hidden" id="spectatorPrizeModal" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="spectatorPrizeModalTitle">
+      <div class="spectator-prize-modal-toolbar">
+        <button type="button" id="spectatorPrizeCloseButton" class="spectator-prize-close">Close</button>
+      </div>
+      <div class="spectator-prize-modal-headline">
+        <div>
+          <p class="spectator-prize-modal-kicker">Prize Drop</p>
+          <h4 class="spectator-prize-modal-title" id="spectatorPrizeModalTitle">Champion Callers</h4>
+        </div>
+        <p class="spectator-prize-modal-note" id="spectatorPrizeModalNote">Winning spectators will show up here once the champion is locked.</p>
+      </div>
+      <ul class="reward-winners reward-winners-modal" id="spectatorWinnerList"></ul>
+    </section>
+
     <script type="module">
       import {
         get,
@@ -1771,6 +1916,12 @@
       const spectatorPrizeBoard = document.getElementById('spectatorPrizeBoard');
       const spectatorPrizeTitle = document.getElementById('spectatorPrizeTitle');
       const spectatorPrizeNote = document.getElementById('spectatorPrizeNote');
+      const spectatorPrizeRevealButton = document.getElementById('spectatorPrizeRevealButton');
+      const spectatorPrizeOverlay = document.getElementById('spectatorPrizeOverlay');
+      const spectatorPrizeModal = document.getElementById('spectatorPrizeModal');
+      const spectatorPrizeCloseButton = document.getElementById('spectatorPrizeCloseButton');
+      const spectatorPrizeModalTitle = document.getElementById('spectatorPrizeModalTitle');
+      const spectatorPrizeModalNote = document.getElementById('spectatorPrizeModalNote');
       const spectatorWinnerList = document.getElementById('spectatorWinnerList');
       const adminPanel = document.getElementById('adminPanel');
       const warriorsTab = document.getElementById('warriorsTab');
@@ -1780,6 +1931,7 @@
       const adminActionGroup = document.getElementById('adminActionGroup');
       const adminUnlockButton = document.getElementById('adminUnlockButton');
       const adminLogoutButton = document.getElementById('adminLogoutButton');
+      const adminControlPanel = document.querySelector('.admin-control-panel');
       const listEl = document.getElementById('playerList');
       const waitlistSection = document.getElementById('waitlistSection');
       const waitlistCountText = document.getElementById('waitlistCountText');
@@ -1841,6 +1993,7 @@
       let currentView = 'warriors';
       let isSwitchingViews = false;
       let isSpectatorInsightsExpanded = false;
+      let isSpectatorPrizeModalOpen = false;
       let isProfileCardPinned = false;
       let activeProfileCardKey = '';
       let firebaseRetryCount = 0;
@@ -1857,10 +2010,18 @@
         }
 
         if (currentView === 'admin') {
-          return null;
+          return adminControlPanel;
         }
 
         return registrationPanel;
+      }
+
+      function getEntriesHeightLockContainer() {
+        if (currentView === 'admin') {
+          return contentLayout;
+        }
+
+        return entriesPanel.parentElement;
       }
 
       function measureEntriesReferenceHeight(referencePanel) {
@@ -1909,7 +2070,7 @@
           return;
         }
 
-        const layoutSlot = entriesPanel.parentElement;
+        const layoutSlot = getEntriesHeightLockContainer();
         if (layoutSlot) {
           const columnCount = window
             .getComputedStyle(layoutSlot)
@@ -2495,6 +2656,7 @@
         }
 
         isSwitchingViews = true;
+        isSpectatorPrizeModalOpen = false;
         if (nextView !== 'admin') {
           isSpectatorInsightsExpanded = false;
           if (isBracketFocus) {
@@ -2788,6 +2950,28 @@
         renderSpectatorSection();
       }
 
+      function openSpectatorPrizeModal() {
+        if (!getChampionEntrant() || isSpectatorPrizeModalOpen) {
+          return;
+        }
+
+        isSpectatorPrizeModalOpen = true;
+        renderSpectatorSection();
+      }
+
+      function closeSpectatorPrizeModal() {
+        if (!isSpectatorPrizeModalOpen) {
+          return;
+        }
+
+        isSpectatorPrizeModalOpen = false;
+        renderSpectatorSection();
+      }
+
+      function syncModalBodyLock() {
+        document.body.classList.toggle('modal-open', isSpectatorInsightsExpanded || isSpectatorPrizeModalOpen);
+      }
+
       function renderSpectatorInsights() {
         const insights = getSpectatorVoteInsights();
         const hasVotes = insights.totalVotes > 0;
@@ -2805,7 +2989,7 @@
         spectatorInsightsOverlay.setAttribute('aria-hidden', String(!shouldShowPanel));
         spectatorInsightsPanel.classList.toggle('hidden', !shouldShowPanel);
         spectatorInsightsPanel.setAttribute('aria-hidden', String(!shouldShowPanel));
-        document.body.classList.toggle('spectator-insights-open', shouldShowPanel);
+        syncModalBodyLock();
 
         spectatorInsightsSummary.innerHTML = '';
         spectatorInsightsPodium.innerHTML = '';
@@ -2860,6 +3044,54 @@
         spectatorInsightsChart.appendChild(makeSpectatorChartPanel(insights));
       }
 
+      function renderSpectatorPrizeModal(champion, prizeWinners) {
+        const shouldShowPanel = Boolean(champion) && isSpectatorPrizeModalOpen;
+
+        spectatorPrizeRevealButton.setAttribute('aria-expanded', String(shouldShowPanel));
+        spectatorPrizeOverlay.classList.toggle('hidden', !shouldShowPanel);
+        spectatorPrizeOverlay.setAttribute('aria-hidden', String(!shouldShowPanel));
+        spectatorPrizeModal.classList.toggle('hidden', !shouldShowPanel);
+        spectatorPrizeModal.setAttribute('aria-hidden', String(!shouldShowPanel));
+        syncModalBodyLock();
+
+        spectatorPrizeModalTitle.textContent = champion ? `${champion.name} Was The Call` : 'Champion Callers';
+        spectatorPrizeModalNote.textContent = champion
+          ? 'Open the reveal to see who backed the champion in time.'
+          : 'Winning spectators will show up here once the champion is locked.';
+        spectatorWinnerList.innerHTML = '';
+        if (!shouldShowPanel) {
+          return;
+        }
+
+        if (!prizeWinners.length) {
+          spectatorPrizeModalNote.textContent = `Nobody backed ${champion.name} before the first result. This round ends with pure bragging rights.`;
+
+          const emptyWinner = document.createElement('li');
+          emptyWinner.className = 'placeholder';
+          emptyWinner.textContent = 'No correct predictions this round.';
+          spectatorWinnerList.appendChild(emptyWinner);
+          return;
+        }
+
+        spectatorPrizeModalNote.textContent = `These spectators backed ${champion.name} before the first result and qualify for the audience prize drop.`;
+        prizeWinners.forEach((winner, index) => {
+          const item = document.createElement('li');
+          item.style.setProperty('--order', String(index));
+
+          const name = document.createElement('span');
+          name.className = 'reward-winner-name';
+          name.textContent = winner.name;
+          item.appendChild(name);
+
+          const tag = document.createElement('span');
+          tag.className = 'reward-winner-tag';
+          tag.textContent = 'Prize eligible';
+          item.appendChild(tag);
+
+          spectatorWinnerList.appendChild(item);
+        });
+      }
+
       function handleSpectatorInsightsToggle() {
         if (!canUseAdminControls() || !spectatorVotes.length) {
           return;
@@ -2905,7 +3137,6 @@
           const votingOpen = isSpectatorVotingOpen();
           const hasEnoughPlayers = players.length >= 2;
           const champion = getChampionEntrant();
-          const championKey = champion ? getPlayerSelectionKey(champion) : '';
           const prizeWinners = getSpectatorPrizeWinners();
 
           spectatorNameInput.disabled = !votingOpen;
@@ -2935,9 +3166,6 @@
           } else {
             spectatorVotes.forEach((vote) => {
               const item = document.createElement('li');
-              if (championKey && vote.pickKey === championKey) {
-                item.classList.add('correct');
-              }
 
               const name = document.createElement('span');
               name.className = 'spectator-vote-name';
@@ -2946,7 +3174,9 @@
 
               const pick = document.createElement('span');
               pick.className = 'spectator-vote-pick';
-              pick.textContent = `Picked ${vote.pickName}`;
+              pick.textContent = champion
+                ? 'Prediction sealed until reveal'
+                : `Picked ${vote.pickName}`;
               item.appendChild(pick);
 
               spectatorVoteList.appendChild(item);
@@ -2954,41 +3184,27 @@
           }
 
           spectatorPrizeBoard.classList.toggle('hidden', !champion);
-          spectatorWinnerList.innerHTML = '';
 
           if (!champion) {
+            isSpectatorPrizeModalOpen = false;
             spectatorPrizeTitle.textContent = 'Champion Callers';
             spectatorPrizeNote.textContent = 'Winning spectators will show up here once the champion is locked.';
+            spectatorPrizeRevealButton.textContent = 'Reveal Who Called It';
+            renderSpectatorPrizeModal(null, []);
             return;
           }
 
           spectatorPrizeTitle.textContent = `${champion.name} Was The Call`;
           if (!prizeWinners.length) {
-            spectatorPrizeNote.textContent = 'No spectator called the champion this time. The crowd prize rolls over to pure bragging rights.';
-            const emptyWinner = document.createElement('li');
-            emptyWinner.className = 'placeholder';
-            emptyWinner.textContent = 'No correct predictions this round.';
-            spectatorWinnerList.appendChild(emptyWinner);
+            spectatorPrizeNote.textContent = 'Keep the board sealed, then open the reveal to see whether anyone called the champion in time.';
+            spectatorPrizeRevealButton.textContent = 'Open Prize Result';
+            renderSpectatorPrizeModal(champion, prizeWinners);
             return;
           }
 
-          spectatorPrizeNote.textContent = 'These spectators backed the champion before the first result and qualify for the audience prize drop.';
-          prizeWinners.forEach((winner, index) => {
-            const item = document.createElement('li');
-            item.style.setProperty('--order', String(index));
-
-            const name = document.createElement('span');
-            name.className = 'reward-winner-name';
-            name.textContent = winner.name;
-            item.appendChild(name);
-
-            const tag = document.createElement('span');
-            tag.className = 'reward-winner-tag';
-            tag.textContent = 'Prize eligible';
-            item.appendChild(tag);
-
-            spectatorWinnerList.appendChild(item);
-          });
+          spectatorPrizeNote.textContent = 'The correct picks stay hidden until you hit reveal.';
+          spectatorPrizeRevealButton.textContent = 'Reveal Who Called It';
+          renderSpectatorPrizeModal(champion, prizeWinners);
         } finally {
           queueEntriesPanelHeightSync();
         }
@@ -4319,6 +4535,7 @@
         rosterOrder = [];
         isRosterFinalized = false;
         isSpectatorInsightsExpanded = false;
+        isSpectatorPrizeModalOpen = false;
         matchWinners = {};
         setRosterShuffleMode(false);
         bracketPanel.classList.remove('is-drawn');
@@ -4393,6 +4610,9 @@
         form.addEventListener('submit', handleSubmit);
         spectatorForm.addEventListener('submit', handleSpectatorVoteSubmit);
         adminSpectatorInsightsButton.addEventListener('click', handleSpectatorInsightsToggle);
+        spectatorPrizeRevealButton.addEventListener('click', openSpectatorPrizeModal);
+        spectatorPrizeOverlay.addEventListener('click', closeSpectatorPrizeModal);
+        spectatorPrizeCloseButton.addEventListener('click', closeSpectatorPrizeModal);
         spectatorInsightsOverlay.addEventListener('click', closeSpectatorInsightsModal);
         spectatorInsightsCloseButton.addEventListener('click', closeSpectatorInsightsModal);
         clearButton.addEventListener('click', resetEventState);
@@ -4458,6 +4678,11 @@
           queueEntriesPanelHeightSync();
         });
         window.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && isSpectatorPrizeModalOpen) {
+            closeSpectatorPrizeModal();
+            return;
+          }
+
           if (event.key === 'Escape' && isSpectatorInsightsExpanded) {
             closeSpectatorInsightsModal();
             return;
@@ -4770,6 +4995,7 @@
       if (entriesPanelHeightObserver) {
         entriesPanelHeightObserver.observe(registrationPanel);
         entriesPanelHeightObserver.observe(spectatorPanelCard);
+        entriesPanelHeightObserver.observe(adminControlPanel);
       }
 
       initializeProject();

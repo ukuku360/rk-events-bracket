@@ -2009,10 +2009,6 @@
           return spectatorPanelCard;
         }
 
-        if (currentView === 'admin') {
-          return adminControlPanel;
-        }
-
         return registrationPanel;
       }
 
@@ -2059,14 +2055,29 @@
         return nextHeight;
       }
 
-      function syncEntriesPanelHeight() {
-        if (!entriesPanel.isConnected) {
-          return;
+      function getAdminEntriesTargetHeight() {
+        if (
+          currentView !== 'admin'
+          || !adminPanel
+          || adminPanel.classList.contains('hidden')
+          || !adminControlPanel
+          || !bracketPanel
+          || bracketPanel.classList.contains('hidden')
+        ) {
+          return null;
         }
 
-        const referencePanel = getEntriesReferencePanel();
-        if (!referencePanel || !referencePanel.isConnected || referencePanel.classList.contains('hidden')) {
-          entriesPanel.style.removeProperty('height');
+        const bracketHeight = Math.round(bracketPanel.getBoundingClientRect().height);
+        const dashboardHeight = Math.round(adminControlPanel.getBoundingClientRect().height);
+        const adminPanelStyles = window.getComputedStyle(adminPanel);
+        const verticalGap = parseFloat(adminPanelStyles.rowGap || adminPanelStyles.gap || '0') || 0;
+        const nextHeight = Math.round(bracketHeight - dashboardHeight - verticalGap);
+
+        return nextHeight > 0 ? nextHeight : null;
+      }
+
+      function syncEntriesPanelHeight() {
+        if (!entriesPanel.isConnected) {
           return;
         }
 
@@ -2085,7 +2096,20 @@
           }
         }
 
-        const nextHeight = measureEntriesReferenceHeight(referencePanel);
+        let nextHeight = null;
+
+        if (currentView === 'admin') {
+          nextHeight = getAdminEntriesTargetHeight();
+        } else {
+          const referencePanel = getEntriesReferencePanel();
+          if (!referencePanel || !referencePanel.isConnected || referencePanel.classList.contains('hidden')) {
+            entriesPanel.style.removeProperty('height');
+            return;
+          }
+
+          nextHeight = measureEntriesReferenceHeight(referencePanel);
+        }
+
         if (!nextHeight) {
           entriesPanel.style.removeProperty('height');
           return;
@@ -4996,6 +5020,7 @@
         entriesPanelHeightObserver.observe(registrationPanel);
         entriesPanelHeightObserver.observe(spectatorPanelCard);
         entriesPanelHeightObserver.observe(adminControlPanel);
+        entriesPanelHeightObserver.observe(bracketPanel);
       }
 
       initializeProject();
